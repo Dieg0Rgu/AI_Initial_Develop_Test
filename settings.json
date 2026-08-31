@@ -1,0 +1,42 @@
+{
+  "files.exclude": {
+    "**/venv": true,
+    "**/.venv": true,
+    "**/node_modules": true,
+    "**/data/chroma_db": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  },
+  "files.watcherExclude": {
+    "**/venv/**": true,
+    "**/.venv/**": true,
+    "**/node_modules/**": true,
+    "**/data/chroma_db/**": true,
+    "**/.pytest_cache/**": true
+  },
+  "python.analysis.exclude": [
+    "**/venv/**",
+    "**/.venv/**",
+    "**/node_modules/**",
+    "**/data/**"
+  ],
+  "python.analysis.ignore": [
+    "**/venv/**",
+    "**/.venv/**",
+    "**/node_modules/**",
+    "**/data/**"
+  ],
+  "python.analysis.typeCheckingMode": "off",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none",
+    "reportMissingTypeStubs": "none",
+    "reportGeneralTypeIssues": "none",
+    "reportOptionalMemberAccess": "none",
+    "reportOptionalSubscript": "none",
+    "reportPrivateImportUsage": "none",
+    "reportUnusedImport": "information",
+    "reportUnusedVariable": "information"
+  },
+  "typescript.validate.enable": true,
+  "javascript.validate.enable": true
+}

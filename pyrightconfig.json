@@ -1,0 +1,26 @@
+{
+  "include": [
+    "backend/app",
+    "backend/tests"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "backend/venv",
+    "backend/.venv",
+    "venv",
+    ".venv",
+    "**/data",
+    "frontend"
+  ],
+  "extraPaths": [
+    "backend",
+    "backend/app"
+  ],
+  "reportMissingImports": "none",
+  "reportMissingTypeStubs": "none",
+  "reportUnknownMemberType": "none",
+  "reportGeneralTypeIssues": "none",
+  "typeCheckingMode": "off"
+}

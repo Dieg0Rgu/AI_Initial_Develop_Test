@@ -1,0 +1,12 @@
+[tool.pyright]
+include = ["backend", "backend/app"]
+exclude = ["**/node_modules", "**/__pycache__", ".venv", "backend/venv"]
+extraPaths = ["backend", "backend/app"]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+pythonpath = ["backend", "backend/app"]
+testpaths = ["backend/tests"]
