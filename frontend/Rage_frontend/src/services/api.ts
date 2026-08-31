@@ -1,6 +1,10 @@
 import type { MetricsSummary, HealthStatus } from '../types/chat'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')
+// If running in production with external backend (Render/Railway/túnel), use VITE_API_URL or VITE_API_BASE_URL.
+// In same-domain Vercel deployment, defaults to '' (relative paths /api/...).
+// In local Vite dev server, defaults to 'http://localhost:8000'.
+const rawUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')).trim()
+const API_BASE = rawUrl.endsWith('/api') ? rawUrl.slice(0, -4) : rawUrl.replace(/\/+$/, '')
 
 export async function sendChatMessage(
   message: string,
