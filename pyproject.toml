@@ -29,7 +29,19 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["backend", "api"]
+packages = ["backend/app", "api"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.venv",
+    "/backend/.venv",
+    "/backend/venv",
+    "/frontend",
+    "/.pytest_cache",
+    "/backend/.pytest_cache",
+    "/.coverage",
+    "/backend/.coverage",
+]
 
 [tool.pyright]
 include = ["backend", "backend/app"]

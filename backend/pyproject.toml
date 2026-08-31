@@ -30,6 +30,14 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.venv",
+    "/venv",
+    "/.pytest_cache",
+    "/.coverage",
+]
+
 [tool.pyright]
 include = [".", "app"]
 exclude = ["**/node_modules", "**/__pycache__", "**/.*", ".venv", "venv"]
