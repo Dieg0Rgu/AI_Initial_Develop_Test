@@ -1,11 +1,11 @@
 from __future__ import annotations
-import os
 from pathlib import Path
 from typing import List
 from pydantic_settings import BaseSettings
-from pydantic import ConfigDict
+from pydantic import ConfigDict, field_validator
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 class Settings(BaseSettings):
     model_config = ConfigDict(
@@ -47,8 +47,39 @@ class Settings(BaseSettings):
     MAX_CACHE_SIZE: int = 500
 
     # Human Escalation Settings
-    ESCALATION_EMAIL: str = "soporte@gastroteacher.edu.co"
-    ESCALATION_WHATSAPP: str = "+57 301 732 5327"
+    ESCALATION_EMAIL: str = "edig0rgudevia@gmail.com"
+    ESCALATION_WHATSAPP: str = "+57 313 730 1501"
+    ESCALATION_PHONE_RAW: str = "3137301501"
     ESCALATION_HOURS: str = "Lunes a Viernes 8:00 AM - 6:00 PM (COT)"
+
+    @field_validator("PORT")
+    @classmethod
+    def validate_port(cls, v: int) -> int:
+        if not (1 <= v <= 65535):
+            raise ValueError("PORT must be between 1 and 65535.")
+        return v
+
+    @field_validator("SIMILARITY_THRESHOLD")
+    @classmethod
+    def validate_similarity(cls, v: float) -> float:
+        if not (0.0 <= v <= 1.0):
+            raise ValueError("SIMILARITY_THRESHOLD must be between 0.0 and 1.0.")
+        return v
+
+    @field_validator("LLM_TEMPERATURE")
+    @classmethod
+    def validate_temperature(cls, v: float) -> float:
+        if not (0.0 <= v <= 2.0):
+            raise ValueError("LLM_TEMPERATURE must be between 0.0 and 2.0.")
+        return v
+
+    @field_validator("CHUNK_OVERLAP")
+    @classmethod
+    def validate_overlap(cls, v: int, info) -> int:
+        chunk_size = info.data.get("CHUNK_SIZE", 500)
+        if v >= chunk_size:
+            raise ValueError("CHUNK_OVERLAP must be strictly smaller than CHUNK_SIZE.")
+        return v
+
 
 settings = Settings()

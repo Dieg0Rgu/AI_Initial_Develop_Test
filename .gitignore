@@ -7,10 +7,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.coverage
+backend/.coverage
+htmlcov/
+*.bin
 
 # Chroma / Vector DB / Datos locales
 data/chroma_db/
 backend/data/chroma_db/
+backend/data/chroma_db/*
 *.sqlite3
 
 # Exports

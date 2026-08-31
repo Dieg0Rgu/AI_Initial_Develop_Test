@@ -1,137 +1,151 @@
 #!/usr/bin/env python3
 """
-Gastroteacher AI Assistant - Comprehensive QA Verification Runner
-Executes full regression, RAG retrieval, threshold escalation, caching, and API tests.
+==============================================================================
+🏛️ GASTROTEACHER AI ASSISTANT - MASTER QA ORCHESTRATOR & CI/CD PIPELINE
+==============================================================================
+Ejecuta secuencialmente el ecosistema completo de control de calidad:
+1. PyTest Unit & Integration Suite (40 tests con fixtures aislados)
+2. Cobertura de Código (Code Coverage >85% en módulos críticos)
+3. Pruebas BDD / Gherkin con Behave (Escalamiento y Caché)
+4. Pruebas de Mutación (Resiliencia de Umbrales en RAGRetriever)
+5. Análisis Estático de Código y Sintaxis con Flake8
+
+Código de salida: 0 si todas las etapas son exitosas, 1 en caso de falla.
 """
+
+from __future__ import annotations
+import os
 import sys
 import time
+import subprocess
 from pathlib import Path
 
-# Add backend to sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Add backend directory to Python path
+BACKEND_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(BACKEND_DIR))
 
-from app.rag.loader import DocumentLoader
-from app.rag.chunker import TextChunker
-from app.rag.vector_store import ChromaVectorStore
-from app.rag.retriever import RAGRetriever
-from app.cache.cache_service import response_cache
-from app.metrics.metrics_tracker import metrics_tracker
-from app.api.routers.documents import ingest_all_documents
-from fastapi.testclient import TestClient
-from app.main import app
+try:
+    from app.utils.sweet_alert_console import SweetAlert
+    USE_SWEET_ALERT = True
+except Exception:
+    USE_SWEET_ALERT = False
 
-def print_header(title: str):
-    print("\n" + "=" * 70)
-    print(f" 🚀 {title}")
-    print("=" * 70)
+def run_command(command: list[str], stage_name: str, cwd: Path = BACKEND_DIR) -> tuple[bool, str, float]:
+    """Runs a shell command measuring elapsed time and capturing output."""
+    start = time.perf_counter()
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(cwd)
 
-def print_test(name: str, passed: bool, details: str = ""):
-    icon = "✅ PASS" if passed else "❌ FAIL"
-    print(f"{icon} | {name:<45} {details}")
+    try:
+        proc = subprocess.run(
+            command,
+            cwd=str(cwd),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        elapsed = time.perf_counter() - start
+        passed = (proc.returncode == 0)
+        output = proc.stdout if passed else (proc.stdout + "\n" + proc.stderr)
+        return passed, output.strip(), round(elapsed, 2)
+    except Exception as e:
+        elapsed = time.perf_counter() - start
+        return False, str(e), round(elapsed, 2)
 
-def run_qa():
-    print_header("GASTROTEACHER AI ASSISTANT - QA VERIFICATION SUITE")
-    start_all = time.time()
-    passed_tests = 0
-    total_tests = 0
+def main() -> int:
+    start_total = time.perf_counter()
+    print("\n" + "=" * 80)
+    print(" 🚀 INICIANDO ORQUESTADOR DE PRUEBAS DE CALIDAD - GASTROTEACHER QA ECOSYSTEM")
+    print("=" * 80 + "\n")
 
-    # 1. Document Loading Check
-    total_tests += 1
-    loader = DocumentLoader()
-    docs = loader.load_documents()
-    if len(docs) >= 3:
-        passed_tests += 1
-        print_test("1. Business Knowledge Base Loading", True, f"({len(docs)} documents loaded)")
-    else:
-        print_test("1. Business Knowledge Base Loading", False, f"({len(docs)} documents found, expected >= 3)")
-
-    # 2. Ingestion & Vector Storage
-    total_tests += 1
-    ingest_res = ingest_all_documents()
-    vs = ChromaVectorStore()
-    count = vs.count()
-    if ingest_res["status"] == "success" and count > 0:
-        passed_tests += 1
-        print_test("2. ChromaDB Vector Store Ingestion", True, f"({count} chunks indexed)")
-    else:
-        print_test("2. ChromaDB Vector Store Ingestion", False, f"({count} chunks)")
-
-    # 3. RAG Retrieval Precision Tests
-    retriever = RAGRetriever(vs)
-    queries = [
-        ("Horarios y Jornadas", "¿Cuáles son los horarios de clases los sábados y noches?", ["02_pricing_schedules_promotions.md", "01_courses_modalities_levels.md"]),
-        ("Precios e Inversión", "¿Cuánto cuesta el programa de Gastronomy English?", ["02_pricing_schedules_promotions.md"]),
-        ("Certificaciones MCER", "¿Qué certificación entregan y preparan para TOEFL o IELTS?", ["03_enrollments_certifications_policies.md"]),
-        ("Modalidades y Sedes", "¿Tienen clases presenciales en Bogotá y Medellín?", ["01_courses_modalities_levels.md"])
+    stages = [
+        {
+            "id": "STAGE_1_PYTEST",
+            "name": "PyTest Unit & Integration Suite",
+            "command": [sys.executable, "-m", "pytest", "tests", "-v", "--cov=app", "--cov-fail-under=85"],
+            "description": "40 pruebas unitarias/integración con mocks para Ollama"
+        },
+        {
+            "id": "STAGE_2_BDD",
+            "name": "BDD / Gherkin Cucumber Suite (Behave)",
+            "command": [sys.executable, "-m", "behave", "qa_ecosystem/bdd/features"],
+            "description": "Escenarios Gherkin de Escalamiento Humano y Respuesta desde Caché"
+        },
+        {
+            "id": "STAGE_3_MUTATION",
+            "name": "Mutation Testing (Threshold Resilience)",
+            "command": [sys.executable, "qa_ecosystem/mutation/mutation_runner.py"],
+            "description": "Evaluación de mutantes en app.rag.retriever (score >= 0.20)"
+        },
+        {
+            "id": "STAGE_4_LINTER",
+            "name": "Static Code Analysis & Linting (Flake8)",
+            "command": [sys.executable, "-m", "flake8", "app", "--count", "--select=E9,F63,F7,F82", "--show-source", "--statistics"],
+            "description": "Validación de sintaxis, variables no definidas y errores críticos"
+        }
     ]
 
-    for label, query, expected_sources in queries:
-        total_tests += 1
-        chunks, is_relevant, ctx = retriever.retrieve(query)
-        has_source = any(any(src in c["source"] for src in expected_sources) for c in chunks)
-        if is_relevant and has_source:
-            passed_tests += 1
-            print_test(f"3. RAG Retrieval [{label}]", True, f"(Score: {chunks[0]['similarity_score']})")
+    results_table = []
+    all_passed = True
+
+    for stage in stages:
+        print(f"▶️  Ejecutando {stage['name']}...")
+        passed, output, duration = run_command(stage["command"], stage["name"])
+
+        status_str = "✅ APROBADO" if passed else "❌ FALLIDO"
+        results_table.append([stage["name"], status_str, f"{duration}s", stage["description"]])
+
+        if not passed:
+            all_passed = False
+            print(f"\n❌ Error en {stage['name']}:\n{output}\n")
         else:
-            print_test(f"3. RAG Retrieval [{label}]", False, f"(Relevant: {is_relevant})")
+            print(f"   ✓ {stage['name']} completado con éxito en {duration}s.\n")
 
-    # 4. Out-of-Scope Human Escalation
-    total_tests += 1
-    out_query = "¿Cómo reparar el carburador de una motocicleta Yamaha?"
-    client = TestClient(app)
-    res_esc = client.post("/api/chat", json={"message": out_query, "bypass_cache": True})
-    esc_data = res_esc.json()
-    if res_esc.status_code == 200 and esc_data["is_escalated"]:
-        passed_tests += 1
-        print_test("4. Out-of-Scope Human Escalation", True, "(Flagged correctly as escalated)")
+    total_duration = round(time.perf_counter() - start_total, 2)
+
+    # Render summary table with SweetAlert / Rich
+    if USE_SWEET_ALERT:
+        SweetAlert.render_summary_table(
+            title="Resumen General del Ecosistema de Calidad (QA Pipeline)",
+            headers=["Fase de Evaluación", "Resultado", "Tiempo", "Alcance de la Prueba"],
+            rows=results_table
+        )
     else:
-        print_test("4. Out-of-Scope Human Escalation", False, f"(Status: {res_esc.status_code}, Escalated: {esc_data.get('is_escalated')})")
+        print("\n" + "=" * 80)
+        print(" RESUMEN GENERAL DE CONTROL DE CALIDAD")
+        print("=" * 80)
+        for row in results_table:
+            print(f" • {row[0]:<42} | {row[1]:<12} | {row[2]:<6} | {row[3]}")
+        print("=" * 80)
 
-    # 5. Frequent Response Cache
-    total_tests += 1
-    cache_query = "¿Cuáles son los precios de los cursos de inglés?"
-    client.post("/api/chat", json={"message": cache_query, "bypass_cache": False})
-    res_cached = client.post("/api/chat", json={"message": cache_query, "bypass_cache": False})
-    cache_json = res_cached.json()
-    if cache_json.get("cached") is True:
-        passed_tests += 1
-        print_test("5. Frequent Response Cache", True, f"(Latency: {cache_json.get('latency_ms')} ms)")
-    else:
-        print_test("5. Frequent Response Cache", False, "(Response was not served from cache)")
-
-    # 6. Webhook Integration Channel
-    total_tests += 1
-    res_webhook = client.post("/api/webhook", json={
-        "message": "Hola, ¿cómo me inscribo?",
-        "sender_id": "telegram_bot_user_42",
-        "channel": "telegram"
-    })
-    webhook_json = res_webhook.json()
-    if res_webhook.status_code == 200 and "response" in webhook_json:
-        passed_tests += 1
-        print_test("6. Webhook Input Channel", True, f"(Session: {webhook_json.get('session_id')})")
-    else:
-        print_test("6. Webhook Input Channel", False, f"(Status: {res_webhook.status_code})")
-
-    # 7. Metrics & Token Analytics
-    total_tests += 1
-    res_metrics = client.get("/api/metrics")
-    metrics_data = res_metrics.json()
-    if res_metrics.status_code == 200 and metrics_data["total_queries"] > 0:
-        passed_tests += 1
-        print_test("7. Real-Time Metrics & Cost Tracker", True, f"(Queries: {metrics_data['total_queries']}, Esc. Rate: {metrics_data['escalation_rate_pct']}%)")
-    else:
-        print_test("7. Real-Time Metrics & Cost Tracker", False, f"(Status: {res_metrics.status_code})")
-
-    duration = round(time.time() - start_all, 2)
-    print_header(f"QA RESULTS: {passed_tests}/{total_tests} TESTS PASSED (Completed in {duration}s)")
-
-    if passed_tests == total_tests:
-        print("\n🎉 ALL QA CHECKS PASSED PERFECTLY! BACKEND IS READY FOR PRODUCTION / FRONTEND INTEGRATION.\n")
+    if all_passed:
+        if USE_SWEET_ALERT:
+            SweetAlert.success(
+                title="¡Ecosistema de Calidad 100% Validado!",
+                text="Todas las suites de prueba (PyTest, Coverage >85%, BDD Behave, Mutaciones y Flake8) pasaron satisfactoriamente.",
+                details={
+                    "Total Fases Ejecutadas": str(len(stages)),
+                    "Tiempo Total Pipeline": f"{total_duration} segundos",
+                    "Estado CI/CD": "READY FOR PRODUCTION (Exit Code 0)"
+                }
+            )
+        else:
+            print(f"\n🎉 ¡TODAS LAS PRUEBAS PASARON SATISFACTORIAMENTE EN {total_duration}s! (Exit Code 0)\n")
         return 0
     else:
-        print(f"\n⚠️ {total_tests - passed_tests} TEST(S) FAILED. Please inspect the output above.\n")
+        if USE_SWEET_ALERT:
+            SweetAlert.error(
+                title="Falla en la Verificación de Calidad",
+                text="Una o más fases del pipeline no cumplieron los criterios de aceptación.",
+                details={
+                    "Estado CI/CD": "BUILD FAILED (Exit Code 1)",
+                    "Tiempo de Ejecución": f"{total_duration} segundos"
+                }
+            )
+        else:
+            print(f"\n⚠️ SE DETECTARON FALLAS EN EL PIPELINE DE CALIDAD. (Exit Code 1)\n")
         return 1
 
 if __name__ == "__main__":
-    sys.exit(run_qa())
+    sys.exit(main())

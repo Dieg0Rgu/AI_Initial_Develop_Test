@@ -1,7 +1,7 @@
 from __future__ import annotations
 import time
-from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, HTTPException
+from typing import List, Dict, Any, Optional
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 try:
@@ -12,6 +12,8 @@ try:
         normalize_simple,
         contains_profanity,
         is_gibberish,
+        is_prompt_injection_or_leakage,
+        is_grupo_a_intent,
         extract_name_intent,
         has_exact_keyword,
         GREETING_WORDS,
@@ -28,6 +30,8 @@ except ImportError:
         normalize_simple,
         contains_profanity,
         is_gibberish,
+        is_prompt_injection_or_leakage,
+        is_grupo_a_intent,
         extract_name_intent,
         has_exact_keyword,
         GREETING_WORDS,
@@ -42,17 +46,20 @@ router = APIRouter(prefix="/api", tags=["Chat & RAG"])
 _retriever = RAGRetriever()
 _llm_client = OllamaClient()
 
+
 class ChatRequest(BaseModel):
     message: str = Field(..., description="Pregunta o consulta del usuario")
     session_id: Optional[str] = Field("default_session", description="ID de sesión de chat")
     bypass_cache: Optional[bool] = Field(False, description="Forzar respuesta fresca omitiendo la memoria caché")
     language: Optional[str] = Field("es", description="Idioma de la interfaz y respuesta ('es' o 'en')")
 
+
 class WebhookPayload(BaseModel):
     message: str = Field(..., description="Mensaje entrante del webhook")
     sender_id: str = Field(..., description="ID del remitente")
     channel: Optional[str] = Field("telegram", description="Canal de origen (telegram, web, n8n)")
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Metadatos adicionales")
+
 
 class SourceDocument(BaseModel):
     id: str
@@ -62,10 +69,12 @@ class SourceDocument(BaseModel):
     similarity_score: float
     excerpt: str
 
+
 class TokenUsage(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
+
 
 class ChatResponse(BaseModel):
     response: str
@@ -75,6 +84,7 @@ class ChatResponse(BaseModel):
     token_usage: TokenUsage
     latency_ms: float
     session_id: str
+
 
 @router.get("/chat")
 async def chat_info():
@@ -96,10 +106,11 @@ async def chat_info():
         "frontend_app": "http://localhost:5173"
     }
 
+
 @router.post("/chat", response_model=ChatResponse)
 async def process_chat(request: ChatRequest):
     """
-    Main endpoint to process user queries with RAG, caching and human escalation.
+    Main endpoint to process user queries with RAG, caching, strict intent classification, and human escalation.
     """
     start_total = time.perf_counter()
     query = request.message.strip()
@@ -110,9 +121,11 @@ async def process_chat(request: ChatRequest):
     detected_name = extract_name_intent(query)
     has_vulgarity = contains_profanity(query)
     gibberish = is_gibberish(query)
-    has_academic_intent = has_exact_keyword(words, IN_SCOPE_KEYWORDS)
+    is_injection = is_prompt_injection_or_leakage(query)
+    is_grupo_a = is_grupo_a_intent(query)
+    has_academic_intent = has_exact_keyword(words, IN_SCOPE_KEYWORDS) and not is_grupo_a
 
-    is_greeting = norm_q in GREETING_WORDS or (len(words) <= 2 and any(w in GREETING_WORDS for w in words) and not has_academic_intent and not has_vulgarity and not gibberish)
+    is_greeting = norm_q in GREETING_WORDS or (len(words) <= 2 and any(w in GREETING_WORDS for w in words) and not has_academic_intent and not has_vulgarity and not gibberish and not is_grupo_a)
     is_isolated_nonsense = (
         not norm_q
         or not any(c.isalnum() for c in query)
@@ -120,12 +133,12 @@ async def process_chat(request: ChatRequest):
         or gibberish
         or (len(words) <= 2 and (norm_q in NONSENSE_KEYWORDS or any(w in NONSENSE_KEYWORDS for w in words)))
         or (len(words) == 1 and not detected_name and not has_academic_intent)
-    ) and not has_academic_intent and not detected_name
+    ) and not has_academic_intent and not detected_name and not is_grupo_a
 
     cache_key = f"{lang}:{query}"
 
     # 1. Check cache if not bypassed
-    if not request.bypass_cache:
+    if not request.bypass_cache and not is_grupo_a:
         cached_result = response_cache.get(cache_key)
         if cached_result:
             latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
@@ -145,8 +158,8 @@ async def process_chat(request: ChatRequest):
                 session_id=request.session_id
             )
 
-    # 2. Retrieve relevant chunks from ChromaDB
-    if is_greeting or is_isolated_nonsense or detected_name or has_vulgarity or gibberish:
+    # 2. Retrieve relevant chunks from ChromaDB (Skip if greeting, nonsense, or Grupo A escalation)
+    if is_greeting or is_isolated_nonsense or detected_name or has_vulgarity or gibberish or is_grupo_a:
         chunks, is_relevant, context = [], False, ""
     else:
         chunks, is_relevant, context = _retriever.retrieve(query)
@@ -204,6 +217,7 @@ async def process_chat(request: ChatRequest):
         session_id=request.session_id
     )
 
+
 @router.get("/webhook")
 async def webhook_info():
     """
@@ -220,6 +234,7 @@ async def webhook_info():
             "channel": "telegram"
         }
     }
+
 
 @router.post("/webhook", response_model=ChatResponse)
 async def process_webhook(payload: WebhookPayload):

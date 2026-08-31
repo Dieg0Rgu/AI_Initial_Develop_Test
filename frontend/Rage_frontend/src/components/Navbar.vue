@@ -31,8 +31,8 @@ const emit = defineEmits<{
     class="sticky top-0 z-30 w-full backdrop-blur-xl transition-colors duration-300 border-b"
     :class="
       isDark
-        ? 'bg-stone-900/75 border-stone-800 text-stone-100'
-        : 'bg-stone-50/80 border-stone-200/80 text-stone-800'
+        ? 'bg-stone-900/80 border-stone-800 text-stone-100'
+        : 'bg-white border-stone-300 text-black shadow-xs'
     "
   >
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
@@ -40,7 +40,7 @@ const emit = defineEmits<{
       <div class="flex items-center gap-3">
         <div
           class="w-11 h-11 rounded-full overflow-hidden border-2 shadow-sm transition-transform hover:scale-105 flex items-center justify-center shrink-0"
-          :class="isDark ? 'border-amber-600/50 bg-stone-900' : 'border-stone-300 bg-white'"
+          :class="isDark ? 'border-amber-600/50 bg-stone-900' : 'border-amber-600 bg-white'"
         >
           <img
             :src="logoImg"
@@ -51,17 +51,23 @@ const emit = defineEmits<{
 
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-amber-700 via-orange-600 to-amber-900 bg-clip-text text-transparent dark:from-amber-400 dark:via-orange-300 dark:to-amber-200">
+            <span
+              class="font-black text-xl tracking-tight"
+              :class="isDark ? 'bg-linear-to-r from-amber-400 via-orange-300 to-amber-200 bg-clip-text text-transparent' : 'text-amber-800'"
+            >
               Gastroteacher
             </span>
             <span
-              class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full border tracking-wider"
-              :class="isDark ? 'bg-amber-950/60 border-amber-800/60 text-amber-300' : 'bg-amber-100/80 border-amber-300/80 text-amber-900'"
+              class="text-[10px] uppercase font-black px-2 py-0.5 rounded-full border tracking-wider"
+              :class="isDark ? 'bg-amber-950/60 border-amber-800/60 text-amber-300' : 'bg-amber-100 border-amber-500 text-amber-950'"
             >
               RAG v1.0
             </span>
           </div>
-          <p class="text-xs text-stone-500 dark:text-stone-400 font-medium">
+          <p
+            class="text-xs font-bold"
+            :class="isDark ? 'text-stone-300' : 'text-stone-900'"
+          >
             {{ labels.subtitle }}
           </p>
         </div>
@@ -71,11 +77,11 @@ const emit = defineEmits<{
       <div class="flex items-center gap-2 sm:gap-2.5">
         <!-- Status Indicator -->
         <div
-          class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border shadow-xs"
+          class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black border shadow-xs"
           :class="
             isOnline
-              ? isDark ? 'bg-emerald-950/40 border-emerald-800/50 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              : isDark ? 'bg-rose-950/40 border-rose-800/50 text-rose-400' : 'bg-rose-50 border-rose-200 text-rose-700'
+              ? isDark ? 'bg-emerald-950/40 border-emerald-800/50 text-emerald-400' : 'bg-emerald-100 border-emerald-500 text-emerald-950'
+              : isDark ? 'bg-rose-950/40 border-rose-800/50 text-rose-400' : 'bg-rose-100 border-rose-500 text-rose-950'
           "
         >
           <span class="relative flex h-2 w-2">
@@ -95,11 +101,11 @@ const emit = defineEmits<{
         <button
           type="button"
           @click="emit('openExportPdf')"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 cursor-pointer"
           :class="
             isDark
               ? 'bg-stone-800/90 hover:bg-stone-700/90 border-stone-700 text-rose-300 hover:border-rose-700/50'
-              : 'bg-white/90 hover:bg-stone-100 border-stone-300 text-rose-700 hover:border-rose-600/50'
+              : 'bg-white hover:bg-rose-50 border-stone-300 text-rose-950 hover:border-rose-600/50'
           "
           :title="labels.exportPdfBtn"
         >
@@ -117,33 +123,33 @@ const emit = defineEmits<{
         <button
           type="button"
           @click="emit('toggleLang')"
-          class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 shadow-xs hover:scale-105 active:scale-95 cursor-pointer"
+          class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-black transition-all duration-200 shadow-xs hover:scale-105 active:scale-95 cursor-pointer"
           :class="
             isDark
               ? 'bg-stone-800/90 hover:bg-stone-700 border-stone-700 text-stone-200'
-              : 'bg-white/90 hover:bg-stone-100 border-stone-300 text-stone-700'
+              : 'bg-white hover:bg-stone-100 border-stone-300 text-black'
           "
           :title="currentLang === 'es' ? 'Switch to English' : 'Cambiar a Español'"
         >
           <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
             <line x1="2" y1="12" x2="22" y2="12"/>
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/>
           </svg>
-          <span :class="{ 'text-amber-600 dark:text-amber-400 font-extrabold': currentLang === 'es', 'opacity-60': currentLang !== 'es' }">ES</span>
-          <span class="opacity-30">|</span>
-          <span :class="{ 'text-amber-600 dark:text-amber-400 font-extrabold': currentLang === 'en', 'opacity-60': currentLang !== 'en' }">EN</span>
+          <span :class="{ 'text-amber-700 dark:text-amber-400 font-black': currentLang === 'es', 'opacity-60': currentLang !== 'es' }">ES</span>
+          <span class="opacity-40">|</span>
+          <span :class="{ 'text-amber-700 dark:text-amber-400 font-black': currentLang === 'en', 'opacity-60': currentLang !== 'en' }">EN</span>
         </button>
 
         <!-- Metrics Button -->
         <button
           type="button"
           @click="emit('openMetrics')"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 cursor-pointer"
           :class="
             isDark
               ? 'bg-stone-800/90 hover:bg-stone-700/90 border-stone-700 text-stone-200 hover:border-amber-700/50'
-              : 'bg-white/90 hover:bg-stone-100 border-stone-300 text-stone-700 hover:border-amber-600/50'
+              : 'bg-white hover:bg-amber-50 border-stone-300 text-black hover:border-amber-600/50'
           "
           :title="labels.metricsBtn"
         >
@@ -169,7 +175,7 @@ const emit = defineEmits<{
           :class="
             isDark
               ? 'bg-stone-800/90 hover:bg-stone-700 border-stone-700 text-amber-300'
-              : 'bg-white/90 hover:bg-stone-100 border-stone-300 text-amber-600'
+              : 'bg-white hover:bg-stone-100 border-stone-300 text-amber-700'
           "
           :title="isDark ? labels.themeLight : labels.themeDark"
         >

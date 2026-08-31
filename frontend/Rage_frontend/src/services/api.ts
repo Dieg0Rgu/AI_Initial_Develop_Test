@@ -90,10 +90,73 @@ export async function exportChatPdf(
   return await res.blob()
 }
 
+export async function exportChatMd(
+  messages: Array<{ role: string; content: string; [key: string]: any }>,
+  sessionId = 'frontend_user'
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/export/chat-md`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: sessionId,
+      messages: messages.map(m => ({
+        role: m.role,
+        content: m.content,
+        is_escalated: m.is_escalated || false,
+        sources: m.sources || [],
+        latency_ms: m.latency_ms || 0,
+        token_usage: m.token_usage || {}
+      })),
+      metadata: {
+        exported_at: new Date().toISOString(),
+        channel: 'web_frontend'
+      }
+    })
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to export Markdown: ${res.status}`)
+  }
+
+  return await res.blob()
+}
+
+export async function exportChatTxt(
+  messages: Array<{ role: string; content: string; [key: string]: any }>,
+  sessionId = 'frontend_user'
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/export/chat-txt`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: sessionId,
+      messages: messages.map(m => ({
+        role: m.role,
+        content: m.content,
+        is_escalated: m.is_escalated || false,
+        sources: m.sources || [],
+        latency_ms: m.latency_ms || 0,
+        token_usage: m.token_usage || {}
+      })),
+      metadata: {
+        exported_at: new Date().toISOString(),
+        channel: 'web_frontend'
+      }
+    })
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to export TXT: ${res.status}`)
+  }
+
+  return await res.blob()
+}
+
 export async function fetchOfficialDocuments(): Promise<Array<{
   id: string
   title: string
   filename: string
+  md_filename?: string
   size_kb: number
   download_url: string
 }>> {
@@ -105,7 +168,7 @@ export async function fetchOfficialDocuments(): Promise<Array<{
   return data.documents || []
 }
 
-export async function downloadOfficialDocPdf(filename: string): Promise<Blob> {
+export async function downloadOfficialDocFile(filename: string): Promise<Blob> {
   const res = await fetch(`${API_BASE}/api/export/documents/${filename}`)
   if (!res.ok) {
     throw new Error(`Failed to download ${filename}`)

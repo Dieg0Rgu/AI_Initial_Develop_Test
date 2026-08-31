@@ -1,0 +1,22 @@
+[run]
+branch = True
+source = app
+omit =
+    */__pycache__/*
+    */tests/*
+    */venv/*
+    */scripts/*
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 2
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG:
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    except ImportError:

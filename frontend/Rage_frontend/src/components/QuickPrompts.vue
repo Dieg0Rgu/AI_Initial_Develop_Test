@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="w-full">
-    <div class="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+    <div class="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider text-stone-900 dark:text-stone-300">
       <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
       </svg>
@@ -33,7 +33,7 @@ const emit = defineEmits<{
       <button
         type="button"
         @click="emit('selectPrompt', prompts.schedule.prompt)"
-        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white/70 hover:bg-amber-50/90 border-stone-200 hover:border-amber-400 text-stone-700 hover:text-amber-900 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-300 dark:hover:text-amber-200 cursor-pointer"
+        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white hover:bg-amber-50 border-stone-300 hover:border-amber-500 text-stone-950 hover:text-amber-950 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-200 dark:hover:text-amber-200 cursor-pointer"
       >
         <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
@@ -46,7 +46,7 @@ const emit = defineEmits<{
       <button
         type="button"
         @click="emit('selectPrompt', prompts.pricing.prompt)"
-        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white/70 hover:bg-amber-50/90 border-stone-200 hover:border-amber-400 text-stone-700 hover:text-amber-900 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-300 dark:hover:text-amber-200 cursor-pointer"
+        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white hover:bg-amber-50 border-stone-300 hover:border-amber-500 text-stone-950 hover:text-amber-950 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-200 dark:hover:text-amber-200 cursor-pointer"
       >
         <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="1" x2="12" y2="23"/>
@@ -59,7 +59,7 @@ const emit = defineEmits<{
       <button
         type="button"
         @click="emit('selectPrompt', prompts.certification.prompt)"
-        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white/70 hover:bg-amber-50/90 border-stone-200 hover:border-amber-400 text-stone-700 hover:text-amber-900 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-300 dark:hover:text-amber-200 cursor-pointer"
+        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white hover:bg-amber-50 border-stone-300 hover:border-amber-500 text-stone-950 hover:text-amber-950 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-200 dark:hover:text-amber-200 cursor-pointer"
       >
         <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="8" r="7"/>
@@ -72,7 +72,7 @@ const emit = defineEmits<{
       <button
         type="button"
         @click="emit('selectPrompt', prompts.enrollment.prompt)"
-        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white/70 hover:bg-amber-50/90 border-stone-200 hover:border-amber-400 text-stone-700 hover:text-amber-900 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-300 dark:hover:text-amber-200 cursor-pointer"
+        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white hover:bg-amber-50 border-stone-300 hover:border-amber-500 text-stone-950 hover:text-amber-950 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-200 dark:hover:text-amber-200 cursor-pointer"
       >
         <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -88,7 +88,7 @@ const emit = defineEmits<{
       <button
         type="button"
         @click="emit('selectPrompt', prompts.escalation.prompt)"
-        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white/70 hover:bg-amber-50/90 border-stone-200 hover:border-amber-400 text-stone-700 hover:text-amber-900 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-300 dark:hover:text-amber-200 cursor-pointer"
+        class="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 text-left bg-white hover:bg-rose-50 border-stone-300 hover:border-rose-400 text-stone-950 hover:text-rose-950 dark:bg-stone-800/60 dark:hover:bg-stone-800/90 dark:border-stone-700/80 dark:hover:border-amber-500/50 dark:text-stone-200 dark:hover:text-amber-200 cursor-pointer"
       >
         <svg class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>

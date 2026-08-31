@@ -1,8 +1,8 @@
-import pytest
 from app.rag.loader import DocumentLoader
 from app.rag.chunker import TextChunker
 from app.rag.vector_store import ChromaVectorStore
 from app.api.routers.documents import ingest_all_documents
+
 
 def test_document_loader_loads_at_least_three_documents():
     loader = DocumentLoader()
@@ -13,6 +13,7 @@ def test_document_loader_loads_at_least_three_documents():
         assert "metadata" in doc
         assert doc["metadata"]["source"].endswith((".md", ".txt"))
         assert len(doc["content"]) > 100
+
 
 def test_chunker_splits_with_overlap():
     chunker = TextChunker(chunk_size=300, chunk_overlap=50)
@@ -27,6 +28,7 @@ def test_chunker_splits_with_overlap():
     assert len(chunks) >= 1
     for chunk in chunks:
         assert len(chunk) <= 400
+
 
 def test_full_document_ingestion_populates_vector_store():
     result = ingest_all_documents()

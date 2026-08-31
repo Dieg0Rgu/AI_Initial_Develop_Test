@@ -6,9 +6,13 @@ from typing import List, Dict, Any, Tuple
 try:
     from app.config import settings
     from app.rag.vector_store import ChromaVectorStore
+    from app.utils.logger import logger
+    from app.exceptions import RAGRetrievalError
 except ImportError:
     from backend.app.config import settings
     from backend.app.rag.vector_store import ChromaVectorStore
+    from backend.app.utils.logger import logger
+    from backend.app.exceptions import RAGRetrievalError
 
 STOP_WORDS = {
     "de", "la", "que", "el", "en", "y", "a", "los", "del", "se", "las", "por", "un", "para",
@@ -63,9 +67,11 @@ BILINGUAL_SYNONYMS = {
     "modalities": "modalidades presencial online hibrida"
 }
 
+
 def normalize_text(text: str) -> str:
     nfkd = unicodedata.normalize('NFKD', text)
     return "".join([c for c in nfkd if not unicodedata.combining(c)]).lower()
+
 
 class RAGRetriever:
     def __init__(self, vector_store: ChromaVectorStore = None):
@@ -94,15 +100,22 @@ class RAGRetriever:
     def retrieve(self, query: str, top_k: int = None) -> Tuple[List[Dict[str, Any]], bool, str]:
         """
         Retrieves top relevant chunks for a user query using hybrid semantic + keyword scoring.
+        Gracefully falls back if vector search encounters errors.
         """
         k = top_k or settings.TOP_K_RESULTS
-        results = self.vector_store.query(query, top_k=k)
+        try:
+            results = self.vector_store.query(query, top_k=k)
+        except Exception as e:
+            logger.error(f"Error querying ChromaVectorStore for query '{query}': {e}", exc_info=True)
+            # Graceful degraded fallback instead of unhandled 500
+            return [], False, ""
 
         docs = results.get("documents", [[]])[0] if results.get("documents") else []
         metas = results.get("metadatas", [[]])[0] if results.get("metadatas") else []
         distances = results.get("distances", [[]])[0] if results.get("distances") else []
 
         if not docs:
+            logger.info(f"No matching documents found in vector store for query: '{query}'")
             return [], False, ""
 
         retrieved_chunks = []
@@ -146,4 +159,7 @@ class RAGRetriever:
             )
         formatted_context = "\n---\n".join(formatted_context_parts)
 
+        logger.info(
+            f"RAG Retrieval query='{query}' -> {len(retrieved_chunks)} chunks, best_score={best_composite_score:.3f}, relevant={is_relevant}"
+        )
         return retrieved_chunks, is_relevant, formatted_context

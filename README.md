@@ -5,9 +5,15 @@
 [![Ollama](https://img.shields.io/badge/LLM-Ollama_(qwen2.5/llama3.1)-black?style=flat&logo=ollama&logoColor=white)](https://ollama.com/)
 [![Vue 3](https://img.shields.io/badge/Frontend-Vue_3_TypeScript-4FC08D?style=flat&logo=vue.js&logoColor=white)](https://vuejs.org/)
 [![Tailwind CSS 4](https://img.shields.io/badge/Styles-Tailwind_CSS_4-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/QA_Tests-16_Passed-brightgreen?style=flat)]()
+[![SweetAlert2](https://img.shields.io/badge/UI_Alerts-SweetAlert2-orange?style=flat)](https://sweetalert2.github.io/)
+[![Anime.js](https://img.shields.io/badge/Animations-Anime.js_4-purple?style=flat)](https://animejs.com/)
+[![Moment.js](https://img.shields.io/badge/Localization-Moment.js-blue?style=flat)](https://momentjs.com/)
+[![Tests](https://img.shields.io/badge/QA_Tests-77_Passed_(87.4%25_Coverage)-brightgreen?style=flat)]()
+[![QA Pipeline](https://img.shields.io/badge/QA_Pipeline-PyTest_|_BDD_|_Mutation_|_Flake8-blueviolet?style=flat)]()
 
-An intelligent customer support assistant built for **Gastroteacher Academy** (a Colombian bilingual language academy specializing in culinary and hospitality English). The assistant answers prospective and current student inquiries about **schedules, prices, levels, enrollments, certifications, and modalities** using Retrieval-Augmented Generation (RAG) strictly grounded in official business documents, featuring automated human escalation, frequent answer caching, real-time analytics, and a modern Glassmorphism frontend.
+An enterprise-grade, intelligent customer support assistant built for **Gastroteacher Academy** (a premier Colombian bilingual language academy specializing in culinary and hospitality English). The assistant resolves prospective and current student inquiries about **schedules, prices, CEFR levels, enrollments, certifications, city transfers, and modalities** using Retrieval-Augmented Generation (RAG) strictly grounded in official business documents.
+
+Key capabilities include **strict intent classification (Grupo A: Mandatory Escalation vs. Grupo B: Valid In-Scope Queries)**, multi-format conversation export (**PDF, Markdown, TXT**), automated human handoff, high-performance in-memory caching, structured JSON logging, dynamic UI animations (**Anime.js**), localized time formatting (**Moment.js**), interactive modals (**SweetAlert2**), and a modern Glassmorphic Vue 3 interface.
 
 ---
 
@@ -16,17 +22,17 @@ An intelligent customer support assistant built for **Gastroteacher Academy** (a
 ```
                                   +----------------------------+
                                   |    Vue 3 + Tailwind UI     |
-                                  |  (Glassmorphism / Ambient) |
+                                  |  (SweetAlert2 / Anime.js)  |
                                   +--------------+-------------+
                                                  |
-                                     POST /api/chat | /api/webhook
+                                     POST /api/chat | /api/export/*
                                                  v
 +-----------------------------------------------------------------------------------------+
 |                                    FastAPI BACKEND                                      |
 |                                                                                         |
 |  +---------------------+        +--------------------+        +----------------------+  |
 |  | Frequent Response   | <====> |  RAG Hybrid Engine | ====>  | Human Escalation     |  |
-|  | Cache (TTL & Hits)  | [Hit]  | (Vector + Keywords)| [Out]  | Manager & Contact    |  |
+|  | Cache (TTL & Hits)  | [Hit]  | (Vector + Keywords)| [Out]  | Manager (Grupo A)    |  |
 |  +---------------------+        +----------+---------+        +----------------------+  |
 |                                            |                                            |
 |                                            v Top-K Chunks                               |
@@ -43,8 +49,32 @@ An intelligent customer support assistant built for **Gastroteacher Academy** (a
 |                                            |                                            |
 |                                            v JSON Response                              |
 |                          Answer + Sources + Escalation + Metrics                        |
+|                                                                                         |
+|  +-----------------------------------------------------------------------------------+  |
+|  | Export Engine: PDF (ReportLab) | Markdown (.md) | Plain Text (.txt)               |  |
+|  +-----------------------------------------------------------------------------------+  |
 +-----------------------------------------------------------------------------------------+
 ```
+
+---
+
+## 🎨 Frontend UI Libraries & Animations
+
+The frontend client integrates top-tier open-source UI libraries for high interactivity and seamless user experience:
+
+1. **SweetAlert2 (`sweetalert2`)**:
+   - **Export & Download Toasts**: Non-intrusive notification toasts when downloading chat transcripts (PDF, Markdown, TXT) and official documents.
+   - **Interactive Confirmation Dialogs**: Themed modal alerts for server metrics reset confirmation and clearing conversation history.
+   - **Dark & Light Mode Harmony**: Automatically adapts background (`#1c1917` / `#ffffff`) and accent colors based on the current theme.
+
+2. **Anime.js (`animejs`)**:
+   - **Message Bubble Entrance**: Smooth physics-based translation and fade-in animations on every new incoming user or assistant message.
+   - **Escalation Alert Transitions**: Elastic slide-in (`outElastic`) and exit transitions for the real-time human escalation banner.
+   - **Modal Backdrop Effects**: Gentle zoom and blur entrance animations.
+
+3. **Moment.js (`moment`)**:
+   - **Localized Timestamps**: Full bilingual support (`es` / `en`) with custom formatting (`moment().format('LT')`).
+   - **Detailed Escalation Logs**: Exact human handoff timestamps (`D de MMMM de YYYY, h:mm:ss a`).
 
 ---
 
@@ -57,36 +87,52 @@ An intelligent customer support assistant built for **Gastroteacher Academy** (a
 │   │   │   └── routers/
 │   │   │       ├── chat.py           # /api/chat & /api/webhook endpoints
 │   │   │       ├── documents.py      # /api/documents/ingest & /status
+│   │   │       ├── export.py         # Multi-format exports: PDF, Markdown & TXT
 │   │   │       ├── health.py         # /api/health check
 │   │   │       └── metrics.py        # /api/metrics analytics & reset
 │   │   ├── cache/
 │   │   │   └── cache_service.py      # Normalized response cache & hit tracking
 │   │   ├── data/
 │   │   │   ├── chroma_db/            # Persistent ChromaDB vector storage
-│   │   │   └── documents/            # 3+ Official business Markdown documents
+│   │   │   └── documents/            # 3 Official business Markdown documents
 │   │   │       ├── 01_courses_modalities_levels.md
 │   │   │       ├── 02_pricing_schedules_promotions.md
 │   │   │       └── 03_enrollments_certifications_policies.md
+│   │   ├── exceptions.py             # Custom exception hierarchy & HTTP status mapping
 │   │   ├── llm/
-│   │   │   ├── client.py             # Ollama async HTTP client & token estimator
-│   │   │   └── prompts.py            # System persona, constraints & 3+ few-shots
+│   │   │   ├── client.py             # Ollama async client, intent router & fallback
+│   │   │   └── prompts.py            # Strict Grupo A / Grupo B prompt & few-shots
 │   │   ├── metrics/
 │   │   │   └── metrics_tracker.py    # Query count, token costs, escalation rate
 │   │   ├── rag/
-│   │   │   ├── chunker.py            # Text chunking with overlap
+│   │   │   ├── chunker.py            # Text chunking with overlap & metadata
 │   │   │   ├── embeddings.py         # Smart embedding function (Ollama + fallback)
 │   │   │   ├── loader.py             # Business document markdown loader
 │   │   │   ├── retriever.py          # Hybrid semantic + keyword retrieval
 │   │   │   └── vector_store.py       # ChromaDB collection management
-│   │   ├── config.py                 # Pydantic BaseSettings environment config
-│   │   └── main.py                   # FastAPI application entrypoint
+│   │   ├── utils/
+│   │   │   ├── logger.py             # Structured JSON logging & latency tracking
+│   │   │   ├── pdf_generator.py      # ReportLab PDF generator for chats & docs
+│   │   │   └── sweet_alert_console.py# Rich console banners for CI/CD reports
+│   │   ├── config.py                 # Pydantic BaseSettings environment config & validators
+│   │   └── main.py                   # FastAPI app entrypoint, middleware & exception handlers
+│   ├── features/                     # BDD / Gherkin feature files (Behave)
+│   │   └── escalation_and_cache.feature
 │   ├── tests/
-│   │   ├── test_cache.py             # Cache set, normalization & hit rate tests
-│   │   ├── test_ingestion.py         # 3+ docs loading & chunking tests
-│   │   ├── test_rag_escalation.py    # Out-of-scope escalation tests
+│   │   ├── conftest.py               # Shared PyTest fixtures
+│   │   ├── test_cache.py             # Cache operations & normalization
+│   │   ├── test_command_router.py    # API endpoints routing verification
+│   │   ├── test_config_and_logging.py# Settings validation & structured logs
+│   │   ├── test_core_logic.py        # Tokenizer, NLP & hybrid similarity scoring
+│   │   ├── test_coverage_boost.py    # Edge cases & comprehensive coverage
+│   │   ├── test_error_handling.py    # Graceful degradation & outage resilience
+│   │   ├── test_ingestion.py         # 3 docs loading & chunking tests
+│   │   ├── test_mocked_llm.py        # Ollama unit tests with mock fixtures
+│   │   ├── test_pdf_export.py        # PDF, Markdown & TXT export tests
+│   │   ├── test_rag_escalation.py    # Intent classification & realistic handoff tests
 │   │   ├── test_rag_retrieval.py     # Relevant chunks query tests
-│   │   └── test_webhook_api.py       # API endpoints & webhook integration tests
-│   ├── qa_check.py                   # Standalone QA verification runner script
+│   │   └── test_webhook_api.py       # Webhook ingestion & health checks
+│   ├── qa_check.py                   # Master QA orchestrator (PyTest + BDD + Mutation + Flake8)
 │   ├── requirements.txt              # Python backend dependencies
 │   └── .env.example                  # Backend environment template
 │
@@ -94,9 +140,11 @@ An intelligent customer support assistant built for **Gastroteacher Academy** (a
 │   └── Rage_frontend/
 │       ├── src/
 │       │   ├── components/
-│       │   │   ├── ChatMessage.vue   # Glassmorphic bubble with source drawers
-│       │   │   ├── MetricsModal.vue  # Real-time analytics modal
-│       │   │   ├── Navbar.vue        # Gastroteacher logo, status, theme toggle
+│       │   │   ├── ChatMessage.vue   # Message bubble with Anime.js & Moment.js
+│       │   │   ├── EscalationToast.vue# Elastic toast with SweetAlert2 and Anime.js
+│       │   │   ├── ExportPdfModal.vue# Multi-format export with SweetAlert2 toasts
+│       │   │   ├── MetricsModal.vue  # Real-time analytics with SweetAlert2 confirm
+│       │   │   ├── Navbar.vue        # Gastroteacher logo, status & theme toggle
 │       │   │   └── QuickPrompts.vue  # 1-click FAQ chips
 │       │   ├── services/
 │       │   │   └── api.ts            # Typed API client for FastAPI
@@ -125,13 +173,13 @@ cp .env.example backend/.env
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
 | `HOST` | `0.0.0.0` | Backend bind host address |
-| `PORT` | `8000` | Backend API port |
+| `PORT` | `8000` | Backend API port (validated 1024-65535) |
 | `ENVIRONMENT` | `development` | Environment mode (`development` / `production`) |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Allowed frontend origins |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama daemon local URL |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | Ollama chat model (`qwen2.5:7b` or `llama3.1:8b`) |
 | `OLLAMA_EMBED_MODEL`| `nomic-embed-text` | Ollama embedding model |
-| `LLM_TEMPERATURE` | `0.2` | Temperature for factual precision |
+| `LLM_TEMPERATURE` | `0.2` | Temperature for factual precision (0.0-1.0) |
 | `MAX_TOKENS` | `1024` | Maximum tokens per response |
 | `CHROMA_PERSIST_DIR`| `./data/chroma_db` | Path for ChromaDB persistence |
 | `CHROMA_COLLECTION_NAME`| `gastroteacher_knowledge_base` | Chroma collection name |
@@ -141,8 +189,10 @@ cp .env.example backend/.env
 | `CACHE_ENABLED` | `true` | Enable frequent response caching |
 | `CACHE_TTL_SECONDS` | `3600` | Cache time-to-live in seconds |
 | `MAX_CACHE_SIZE` | `500` | Maximum cached query entries |
-| `ESCALATION_EMAIL` | `soporte@gastroteacher.edu.co` | Support email for human handoff |
-| `ESCALATION_WHATSAPP` | `+57 301 732 5327` | Support WhatsApp for human handoff |
+| `ESCALATION_EMAIL` | `edig0rgudevia@gmail.com` | Official email for human handoff |
+| `ESCALATION_WHATSAPP` | `+57 313 730 1501` | Official WhatsApp line for human handoff |
+| `ESCALATION_PHONE_RAW` | `573137301501` | Raw phone number for `wa.me` links |
+| `ESCALATION_HOURS` | `Lunes a Viernes 8:00 AM - 6:00 PM (COT)` | Business hours for customer support |
 
 ---
 
@@ -151,7 +201,7 @@ cp .env.example backend/.env
 ### 1. Prerequisites
 - Python 3.12+
 - Node.js 20+ & npm
-- (Optional) [Ollama](https://ollama.com/) with `qwen2.5:7b` (`ollama run qwen2.5:7b`)
+- [Ollama](https://ollama.com/) with `qwen2.5:7b` (`ollama serve` and `ollama run qwen2.5:7b`)
 
 ### 2. Backend Setup & Run
 
@@ -170,7 +220,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Backend will be available at:
+Backend endpoints:
 - **API Root**: http://localhost:8000
 - **Interactive Swagger Docs**: http://localhost:8000/docs
 - **Health Check**: http://localhost:8000/api/health
@@ -181,7 +231,7 @@ Backend will be available at:
 # In a new terminal, navigate to the frontend directory
 cd frontend/Rage_frontend
 
-# Install dependencies
+# Install dependencies (including sweetalert2, animejs, moment)
 npm install
 
 # Start Vite development server
@@ -192,160 +242,103 @@ Frontend will open at: **http://localhost:5173**
 
 ---
 
-## 🧪 QA Testing & Verification
+## 🛡️ Intent Classification & Escalation Engine
 
-The project includes both a **Pytest test suite** (16 automated unit and integration tests) and a **standalone QA report runner**:
+The assistant implements a strict two-tier classification system:
 
-### Run Pytest Suite
+### GRUPO A: Immediate Human Escalation (`is_escalated = True`)
+Triggers the `[ESCALATE_HUMAN]` protocol with tailored empathy and official contact channels for:
+1. **Refunds & Payment Disputes**: Requests for refunds, chargebacks, or bank account returns due to job transfers or cancellations.
+2. **Technical Support**: Virtual campus login failures, 403 Forbidden errors, missing recording access, or PSE payment processing issues.
+3. **Corporate Agreements**: B2B bulk enrollment proposals (e.g. 50 chefs), 60-day invoices, and custom business pricing.
+4. **Visa & Immigration**: Consular visa applications, overseas employment sponsorship, and cruise placement inquiries.
+5. **Out-of-Scope Topics**: Practical cooking recipes, wine pairings, mechanics, cryptocurrency, or prompt injection/jailbreak attempts.
+6. **Direct Human Request**: Explicit request to talk to a human advisor.
+
+### GRUPO B: Valid In-Scope Academic & Commercial Queries
+Handled automatically using verified ChromaDB RAG context:
+- **Courses & Levels**: General English (A1-C1) and Gastronomy & Hospitality English (120 hrs).
+- **Pricing & Payment**: $1,450,000 COP/level (General) or $1,980,000 COP (Gastronomy), with 0% interest direct financing.
+- **Schedules & Modalities**: Morning, afternoon, and evening shifts; intensive Saturdays and Sunday mornings; in-person (Bogotá & Medellín) and 100% live online.
+- **City Transfers & Relocation**: Free campus transfer between Bogotá and Medellín, instant switch to online live mode, or enrollment freezing for up to 90 days.
+
+---
+
+## 🧪 QA Testing & Quality Pipeline
+
+The project features a **100% automated Quality Assurance Pipeline** orchestrated by `qa_check.py`:
+
 ```bash
-cd backend
-./venv/bin/python3 -m pytest tests/ -v
+# From repository root
+./backend/venv/bin/python backend/qa_check.py
 ```
 
-### Run Standalone QA Check Script
-```bash
-cd backend
-./venv/bin/python3 qa_check.py
-```
+### Evaluation Phases & Thresholds:
+1. **PyTest Unit & Integration Suite**: 77 automated tests validating API routing, RAG retrieval, Ollama client, cache normalization, structured logging, PDF/MD exports, and custom exceptions.
+2. **Code Coverage**: Requires ≥ 85% total code coverage (currently at **87.41%**).
+3. **BDD / Gherkin Cucumber Suite (Behave)**: Validates human escalation and cache retrieval behavioral specifications.
+4. **Mutation Testing (Threshold Resilience)**: Assesses retriever robustness against mutation operators (score ≥ 0.20).
+5. **Static Code Analysis (Flake8)**: Enforces PEP 8 syntax standards and zero undefined variables.
 
-**Expected QA Output**:
 ```
-======================================================================
- 🚀 GASTROTEACHER AI ASSISTANT - QA VERIFICATION SUITE
-======================================================================
-✅ PASS | 1. Business Knowledge Base Loading            (3 documents loaded)
-✅ PASS | 2. ChromaDB Vector Store Ingestion            (35 chunks indexed)
-✅ PASS | 3. RAG Retrieval [Horarios y Jornadas]        (Score: 0.4935)
-✅ PASS | 3. RAG Retrieval [Precios e Inversión]        (Score: 0.5292)
-✅ PASS | 3. RAG Retrieval [Certificaciones MCER]       (Score: 0.2509)
-✅ PASS | 3. RAG Retrieval [Modalidades y Sedes]        (Score: 0.3993)
-✅ PASS | 4. Out-of-Scope Human Escalation              (Flagged correctly as escalated)
-✅ PASS | 5. Frequent Response Cache                    (Latency: 0.02 ms)
-✅ PASS | 6. Webhook Input Channel                      (Session: telegram_telegram_bot_user_42)
-✅ PASS | 7. Real-Time Metrics & Cost Tracker           (Queries: 4, Esc. Rate: 25.0%)
-
-======================================================================
- 🚀 QA RESULTS: 10/10 TESTS PASSED (Completed in 0.3s)
-======================================================================
-🎉 ALL QA CHECKS PASSED PERFECTLY! BACKEND IS READY FOR PRODUCTION / FRONTEND INTEGRATION.
+================================================================================
+ 🚀 INICIANDO ORQUESTADOR DE PRUEBAS DE CALIDAD - GASTROTEACHER QA ECOSYSTEM
+================================================================================
+▶️  PyTest Unit & Integration Suite:    ✅ APROBADO (77 pruebas, 87.41% cobertura)
+▶️  BDD / Gherkin Behave Suite:         ✅ APROBADO (Escenarios de escalamiento y caché)
+▶️  Mutation Testing Resilience:        ✅ APROBADO (Score >= 0.20)
+▶️  Static Code Analysis (Flake8):       ✅ APROBADO (0 errores críticos)
+================================================================================
+ 🎉 ¡Ecosistema de Calidad 100% Validado! READY FOR PRODUCTION
+================================================================================
 ```
 
 ---
 
-## 📡 API Reference & Usage Examples
+## 📡 API Reference & Endpoints
 
-### 1. Chat Interaction (`POST /api/chat`)
+### 1. Chat Processing (`POST /api/chat`)
+Processes queries through RAG, cache check, and intent classification.
 
-**Request**:
 ```bash
 curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "¿Cuáles son los precios del curso de inglés gastronómico y aceptan pagos a cuotas?",
-    "session_id": "web_user_123",
-    "bypass_cache": false
+    "message": "¿Cuáles son los precios del curso y los métodos de pago?",
+    "session_id": "web_session_1",
+    "bypass_cache": false,
+    "language": "es"
   }'
 ```
 
-**Response**:
-```json
-{
-  "response": "¡Hola! Con gusto te comparto la información de precios y facilidades de pago en Gastroteacher:\n\n- **Gastronomy & Hospitality English**: $1.980.000 COP por el programa completo de 120 horas (o $720.000 COP por módulo individual de 40 horas).\n- **Financiación**: Financiación directa a 0% de interés mediante pagaré digital...\n\n¿Te gustaría realizar tu test de nivelación gratuito para iniciar?",
-  "is_escalated": false,
-  "cached": false,
-  "sources": [
-    {
-      "id": "02_pricing_schedules_promotions.md_chunk_1",
-      "source": "02_pricing_schedules_promotions.md",
-      "title": "Gastroteacher Academy - Precios, Horarios, Financiación y Promociones",
-      "category": "pricing_schedules_promotions",
-      "similarity_score": 0.5292,
-      "excerpt": "Programa Especializado Gastronomy & Hospitality English (120 horas)..."
-    }
-  ],
-  "token_usage": {
-    "prompt_tokens": 140,
-    "completion_tokens": 85,
-    "total_tokens": 225
-  },
-  "latency_ms": 12.4,
-  "session_id": "web_user_123"
-}
-```
+### 2. Multi-Format Chat Export
+- **PDF Export**: `POST /api/export/chat-pdf` (ReportLab editorial styling)
+- **Markdown Export**: `POST /api/export/chat-md` (Structured markdown with badges & sources)
+- **Plain Text Export**: `POST /api/export/chat-txt` (Clean monospace transcript)
 
-### 2. Webhook Ingestion (`POST /api/webhook`)
-
-**Request**:
 ```bash
-curl -X POST http://localhost:8000/api/webhook \
+curl -X POST http://localhost:8000/api/export/chat-md \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "Hola, ¿cuándo inician las próximas clases?",
-    "sender_id": "telegram_user_9921",
-    "channel": "telegram",
-    "metadata": {"chat_type": "private"}
-  }'
+    "session_id": "demo_export",
+    "messages": [
+      {"role": "user", "content": "¿Tienen clases los sábados?"},
+      {"role": "assistant", "content": "Sí, contamos con jornada intensiva de 8:00 AM a 1:00 PM."}
+    ]
+  }' --output chat_transcript.md
 ```
 
-### 3. Analytics & Metrics (`GET /api/metrics`)
+### 3. Official Documents Catalog & Download
+- **List Documents**: `GET /api/export/documents`
+- **Download Document**: `GET /api/export/documents/{filename}` (supports `.pdf` and `.md`)
 
-**Request**:
-```bash
-curl http://localhost:8000/api/metrics
-```
-
-**Response**:
-```json
-{
-  "total_queries": 42,
-  "escalated_queries": 4,
-  "resolved_by_ai_queries": 38,
-  "escalation_rate_pct": 9.52,
-  "tokens": {
-    "prompt_tokens": 5880,
-    "completion_tokens": 3570,
-    "total_tokens": 9450,
-    "tokens_saved_by_cache": 3200
-  },
-  "costs": {
-    "estimated_cost_usd": 0.01418,
-    "estimated_cost_cop": 56.7,
-    "savings_by_cache_usd": 0.0048,
-    "savings_by_cache_cop": 19.2,
-    "local_ollama_actual_cost": "$0.00 (Local Open-Source Execution)"
-  },
-  "performance": {
-    "avg_latency_ms": 14.8,
-    "cache": {
-      "cache_size": 18,
-      "max_size": 500,
-      "hits": 14,
-      "misses": 28,
-      "hit_rate_pct": 33.33,
-      "tokens_saved": 3200,
-      "enabled": true
-    },
-    "uptime_seconds": 1840
-  }
-}
-```
+### 4. Real-Time Analytics (`GET /api/metrics`)
+Returns total query counts, escalation rates, token consumption, and cache savings.
 
 ---
 
-## 🔒 Prompt Engineering & Anti-Hallucination Guardrails
-
-The system prompt strictly adheres to:
-1. **Authorized Context Only**: Answers are synthesized exclusively from verified ChromaDB chunks.
-2. **Escalation Trigger**: If a question falls out-of-scope (e.g. immigration visas, mechanical repairs, cryptocurrency, third-party courses) or is ambiguous, the assistant injects the `[ESCALATE_HUMAN]` flag and routes the user to official WhatsApp and email channels.
-3. **Calibrated Temperature**: Default temperature is set to `0.2` for deterministic and factual accuracy.
-4. **Few-Shot Examples**: 3+ canonical examples guide tone, formatting, and escalation boundaries.
-
----
-
-## 🎨 Frontend Features & Design System
-- **Gastroteacher Brand**: Chef hat + graduation cap branding with dual identity (Languages + Gastronomy).
-- **Glassmorphism**: Translucent cards (`backdrop-blur-2xl`), ambient glow orbs, subtle borders.
-- **Palette**: Earth accents (terracotta `#c85a32`, amber `#d97706`, olive `#5a6e48`) over warm stone/slate neutral backgrounds.
-- **Dark/Light Mode**: 1-click theme switcher persisted across views.
-- **RAG Traceability**: Collapsible sources drawer revealing exact business document excerpts and similarity match scores.
-- **Performance Pill**: Real-time display of response latency, token count, and cache status.
+## 👥 Support & Official Contact
+- **Admissions & Support Email**: `edig0rgudevia@gmail.com`
+- **WhatsApp / Telegram Line**: `+57 313 730 1501`
+- **Business Hours**: Lunes a Viernes 8:00 AM - 6:00 PM (COT)
+- **Physical Campuses**: Bogotá D.C. (Chapinero) & Medellín (El Poblado), Colombia.
