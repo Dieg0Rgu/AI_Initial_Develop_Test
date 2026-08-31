@@ -33,7 +33,7 @@ packages = ["backend", "api"]
 
 [tool.pyright]
 include = ["backend", "backend/app"]
-exclude = ["**/node_modules", "**/__pycache__", ".venv", "backend/venv"]
+exclude = ["**/node_modules", "**/__pycache__", "**/.*", ".venv", "backend/venv"]
 extraPaths = ["backend", "backend/app"]
 venvPath = "."
 venv = ".venv"
