@@ -5,7 +5,8 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 export async function sendChatMessage(
   message: string,
   sessionId = 'frontend_user',
-  bypassCache = false
+  bypassCache = false,
+  language: 'es' | 'en' = 'es'
 ): Promise<{
   response: string
   is_escalated: boolean
@@ -21,7 +22,8 @@ export async function sendChatMessage(
     body: JSON.stringify({
       message,
       session_id: sessionId,
-      bypass_cache: bypassCache
+      bypass_cache: bypassCache,
+      language
     })
   })
 
@@ -36,7 +38,8 @@ export async function sendChatMessage(
 export async function sendWebhookMessage(
   message: string,
   senderId = 'web_form_user',
-  channel = 'web_form'
+  channel = 'web_form',
+  language: 'es' | 'en' = 'es'
 ) {
   const res = await fetch(`${API_BASE}/api/webhook`, {
     method: 'POST',
@@ -44,7 +47,8 @@ export async function sendWebhookMessage(
     body: JSON.stringify({
       message,
       sender_id: senderId,
-      channel
+      channel,
+      metadata: { language }
     })
   })
 
@@ -53,6 +57,60 @@ export async function sendWebhookMessage(
   }
 
   return await res.json()
+}
+
+export async function exportChatPdf(
+  messages: Array<{ role: string; content: string; [key: string]: any }>,
+  sessionId = 'frontend_user'
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/export/chat-pdf`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: sessionId,
+      messages: messages.map(m => ({
+        role: m.role,
+        content: m.content,
+        is_escalated: m.is_escalated || false,
+        sources: m.sources || [],
+        latency_ms: m.latency_ms || 0,
+        token_usage: m.token_usage || {}
+      })),
+      metadata: {
+        exported_at: new Date().toISOString(),
+        channel: 'web_frontend'
+      }
+    })
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to export PDF: ${res.status}`)
+  }
+
+  return await res.blob()
+}
+
+export async function fetchOfficialDocuments(): Promise<Array<{
+  id: string
+  title: string
+  filename: string
+  size_kb: number
+  download_url: string
+}>> {
+  const res = await fetch(`${API_BASE}/api/export/documents`)
+  if (!res.ok) {
+    throw new Error('Failed to list documents')
+  }
+  const data = await res.json()
+  return data.documents || []
+}
+
+export async function downloadOfficialDocPdf(filename: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/export/documents/${filename}`)
+  if (!res.ok) {
+    throw new Error(`Failed to download ${filename}`)
+  }
+  return await res.blob()
 }
 
 export async function fetchMetrics(): Promise<MetricsSummary> {

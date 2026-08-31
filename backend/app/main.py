@@ -5,12 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 try:
     from app.config import settings
-    from app.api.routers import chat, documents, metrics, health
+    from app.api.routers import chat, documents, metrics, health, export
     from app.api.routers.documents import ingest_all_documents
     from app.rag.vector_store import ChromaVectorStore
 except ImportError:
     from backend.app.config import settings
-    from backend.app.api.routers import chat, documents, metrics, health
+    from backend.app.api.routers import chat, documents, metrics, health, export
     from backend.app.api.routers.documents import ingest_all_documents
     from backend.app.rag.vector_store import ChromaVectorStore
 
@@ -48,6 +48,7 @@ app.include_router(chat.router)
 app.include_router(documents.router)
 app.include_router(metrics.router)
 app.include_router(health.router)
+app.include_router(export.router)
 
 @app.get("/")
 async def root():

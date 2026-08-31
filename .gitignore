@@ -1,6 +1,7 @@
 # Python
 venv/
 .venv/
+backend/venv/
 env/
 __pycache__/
 *.py[cod]
@@ -9,11 +10,18 @@ __pycache__/
 
 # Chroma / Vector DB / Datos locales
 data/chroma_db/
+backend/data/chroma_db/
 *.sqlite3
+
+# Exports
+exports/
+backend/exports/
 
 # Node / Frontend
 node_modules/
+frontend/Rage_frontend/node_modules/
 dist/
+frontend/Rage_frontend/dist/
 dist-ssr/
 *.local
 

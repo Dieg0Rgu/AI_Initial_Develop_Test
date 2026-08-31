@@ -1,28 +1,35 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import type { ChatMessage } from './types/chat'
+import { translations, type Language } from './i18n/translations'
 import { sendChatMessage, fetchHealth, fetchMetrics } from './services/api'
 import Navbar from './components/Navbar.vue'
 import QuickPrompts from './components/QuickPrompts.vue'
 import ChatMessageItem from './components/ChatMessage.vue'
 import MetricsModal from './components/MetricsModal.vue'
+import ExportPdfModal from './components/ExportPdfModal.vue'
 
 // State
 const isDark = ref(true)
+const currentLang = ref<Language>('es')
 const isOnline = ref(true)
 const totalQueries = ref(0)
 const showMetrics = ref(false)
+const showExportPdf = ref(false)
 
 const inputMessage = ref('')
 const isLoading = ref(false)
 const bypassCache = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
 
+// Current locale dictionary
+const t = computed(() => translations[currentLang.value])
+
 const messages = ref<ChatMessage[]>([
   {
     id: 'welcome-1',
     role: 'assistant',
-    content: '¡Hola! Bienvenido a **Gastroteacher Academy** 👨‍🍳📚\n\nSoy tu asistente virtual con RAG. Puedo ayudarte con información precisa y verificada sobre nuestros cursos de inglés gastronómico y general, horarios, precios en COP, modalidades, certificaciones y proceso de matrícula.\n\n¿En qué te puedo colaborar hoy?',
+    content: translations.es.welcomeMessage,
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 ])
@@ -33,6 +40,14 @@ function toggleTheme() {
     document.documentElement.classList.add('dark')
   } else {
     document.documentElement.classList.remove('dark')
+  }
+}
+
+function toggleLanguage() {
+  currentLang.value = currentLang.value === 'es' ? 'en' : 'es'
+  // If only the welcome message is present, update it dynamically
+  if (messages.value.length === 1 && messages.value[0].role === 'assistant') {
+    messages.value[0].content = t.value.welcomeMessage
   }
 }
 
@@ -72,7 +87,7 @@ async function handleSendMessage(customText?: string) {
   scrollToBottom()
 
   try {
-    const result = await sendChatMessage(text, 'web_session', bypassCache.value)
+    const result = await sendChatMessage(text, 'web_session', bypassCache.value, currentLang.value)
 
     const botMsg: ChatMessage = {
       id: `bot-${Date.now()}`,
@@ -92,7 +107,7 @@ async function handleSendMessage(customText?: string) {
     const errorMsg: ChatMessage = {
       id: `err-${Date.now()}`,
       role: 'assistant',
-      content: `⚠️ Error al conectar con el servidor: ${err.message || 'Verifica que el backend de FastAPI esté corriendo en el puerto 8000.'}`,
+      content: `${t.value.connectionError} (${err.message || 'Error'}).`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       error: true
     }
@@ -104,12 +119,12 @@ async function handleSendMessage(customText?: string) {
 }
 
 function clearChat() {
-  if (!confirm('¿Deseas reiniciar la conversación?')) return
+  if (!confirm(t.value.clearChatConfirm)) return
   messages.value = [
     {
-      id: 'welcome-reset',
+      id: `welcome-reset-${Date.now()}`,
       role: 'assistant',
-      content: '¡Conversación reiniciada! ¿Qué información sobre Gastroteacher deseas consultar?',
+      content: t.value.welcomeReset,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]
@@ -153,15 +168,27 @@ onMounted(() => {
       :is-dark="isDark"
       :is-online="isOnline"
       :total-queries="totalQueries"
+      :current-lang="currentLang"
+      :labels="{
+        subtitle: t.subtitle,
+        statusOnline: t.statusOnline,
+        statusOffline: t.statusOffline,
+        metricsBtn: t.metricsBtn,
+        exportPdfBtn: t.exportPdfBtn,
+        themeLight: t.themeLight,
+        themeDark: t.themeDark
+      }"
       @toggle-theme="toggleTheme"
+      @toggle-lang="toggleLanguage"
       @open-metrics="showMetrics = true"
+      @open-export-pdf="showExportPdf = true"
     />
 
     <!-- Main Container -->
     <main class="relative z-10 flex-1 max-w-5xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-4">
       <!-- Chat Card Window -->
       <div
-        class="flex-1 flex flex-col rounded-3xl backdrop-blur-2xl border shadow-xl transition-all duration-300 overflow-hidden min-h-145 max-h-[calc(100vh-140px)]"
+        class="flex-1 flex flex-col rounded-3xl backdrop-blur-2xl border shadow-xl transition-all duration-300 overflow-hidden min-h-[580px] max-h-[calc(100vh-140px)]"
         :class="
           isDark
             ? 'bg-stone-900/60 border-stone-800/80 shadow-black/40'
@@ -179,6 +206,18 @@ onMounted(() => {
             :key="msg.id"
             :message="msg"
             :is-dark="isDark"
+            :labels="{
+              you: t.you,
+              assistant: t.assistant,
+              escalatedTitle: t.escalatedTitle,
+              escalatedDesc: t.escalatedDesc,
+              whatsappBtn: t.whatsappBtn,
+              emailBtn: t.emailBtn,
+              cachedBadge: t.cachedBadge,
+              viewSources: t.viewSources,
+              hideSources: t.hideSources,
+              officialDocs: t.officialDocs
+            }"
           />
 
           <!-- Loading Indicator -->
@@ -190,7 +229,7 @@ onMounted(() => {
               <div class="w-2 h-2 rounded-full bg-amber-600 animate-bounce" style="animation-delay: 150ms"></div>
               <div class="w-2 h-2 rounded-full bg-amber-600 animate-bounce" style="animation-delay: 300ms"></div>
             </div>
-            <span class="text-xs font-medium">Consultando base de conocimiento RAG & sintetizando...</span>
+            <span class="text-xs font-medium">{{ t.loadingText }}</span>
           </div>
         </div>
 
@@ -200,7 +239,11 @@ onMounted(() => {
           :class="isDark ? 'bg-stone-900/85 border-stone-800' : 'bg-white/85 border-stone-200'"
         >
           <!-- Quick Suggestions -->
-          <QuickPrompts @select-prompt="handleSendMessage" />
+          <QuickPrompts
+            :label-title="t.frequentQuestions"
+            :prompts="t.prompts"
+            @select-prompt="handleSendMessage"
+          />
 
           <!-- Input Box & Actions Form -->
           <form @submit.prevent="() => handleSendMessage()" class="flex flex-col sm:flex-row items-center gap-2">
@@ -209,7 +252,7 @@ onMounted(() => {
               <input
                 v-model="inputMessage"
                 type="text"
-                placeholder="Escribe tu consulta sobre horarios, precios, programas, certificaciones..."
+                :placeholder="t.inputPlaceholder"
                 :disabled="isLoading"
                 class="w-full pl-4 pr-10 py-3 rounded-2xl text-sm transition-all duration-200 outline-hidden border shadow-inner"
                 :class="
@@ -223,7 +266,7 @@ onMounted(() => {
                 v-if="messages.length > 2"
                 type="button"
                 @click="clearChat"
-                title="Limpiar chat"
+                :title="t.clearChatTitle"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 cursor-pointer"
               >
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -238,14 +281,14 @@ onMounted(() => {
               <!-- Bypass cache toggle -->
               <label
                 class="flex items-center gap-1.5 text-[11px] font-medium text-stone-500 dark:text-stone-400 cursor-pointer select-none px-2 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-stone-800/50 transition-colors"
-                title="Forzar respuesta fresca de la IA omitiendo la memoria caché"
+                :title="t.noCacheTitle"
               >
                 <input
                   type="checkbox"
                   v-model="bypassCache"
                   class="rounded text-amber-600 focus:ring-amber-500"
                 />
-                <span>Sin Caché</span>
+                <span>{{ t.noCache }}</span>
               </label>
 
               <!-- Send Button -->
@@ -255,11 +298,11 @@ onMounted(() => {
                 class="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 shadow-md hover:scale-102 active:scale-98 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                 :class="
                   isDark
-                    ? 'bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-amber-900/20'
-                    : 'bg-linear-to-r from-amber-700 to-orange-700 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-900/10'
+                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-amber-900/20'
+                    : 'bg-gradient-to-r from-amber-700 to-orange-700 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-900/10'
                 "
               >
-                <span>Enviar</span>
+                <span>{{ t.sendBtn }}</span>
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="22" y1="2" x2="11" y2="13"/>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -275,7 +318,57 @@ onMounted(() => {
     <MetricsModal
       v-if="showMetrics"
       :is-dark="isDark"
+      :labels="{
+        metricsTitle: t.metricsTitle,
+        metricsSubtitle: t.metricsSubtitle,
+        loadingMetrics: t.loadingMetrics,
+        totalQueries: t.totalQueries,
+        resolvedByAI: t.resolvedByAI,
+        humanEscalation: t.humanEscalation,
+        cacheHits: t.cacheHits,
+        tokenSectionTitle: t.tokenSectionTitle,
+        totalTokens: t.totalTokens,
+        savedTokens: t.savedTokens,
+        localCost: t.localCost,
+        freeLocal: t.freeLocal,
+        avgLatency: t.avgLatency,
+        cacheSize: t.cacheSize,
+        uptime: t.uptime,
+        resetMetricsBtn: t.resetMetricsBtn,
+        resettingBtn: t.resettingBtn,
+        resetConfirm: t.resetConfirm,
+        closeBtn: t.closeBtn,
+        sweetAlertWarningTitle: t.sweetAlertWarningTitle,
+        sweetAlertWarningText: t.sweetAlertWarningText,
+        sweetAlertConfirmBtn: t.sweetAlertConfirmBtn,
+        sweetAlertCancelBtn: t.sweetAlertCancelBtn,
+        sweetAlertSuccessTitle: t.sweetAlertSuccessTitle,
+        sweetAlertSuccessText: t.sweetAlertSuccessText,
+        sweetAlertOkBtn: t.sweetAlertOkBtn
+      }"
+      @metrics-reset="totalQueries = 0"
       @close="showMetrics = false"
+    />
+
+    <!-- PDF Export Modal -->
+    <ExportPdfModal
+      :is-open="showExportPdf"
+      :is-dark="isDark"
+      :messages="messages"
+      session-id="web_session"
+      :labels="{
+        exportModalTitle: t.exportModalTitle,
+        exportModalSubtitle: t.exportModalSubtitle,
+        exportChatTitle: t.exportChatTitle,
+        exportChatDesc: t.exportChatDesc,
+        exportChatAction: t.exportChatAction,
+        exportDocsTitle: t.exportDocsTitle,
+        exportDocsDesc: t.exportDocsDesc,
+        exportSuccessAlertTitle: t.exportSuccessAlertTitle,
+        exportSuccessAlertText: t.exportSuccessAlertText,
+        closeBtn: t.closeBtn
+      }"
+      @close="showExportPdf = false"
     />
   </div>
 </template>

@@ -1,16 +1,28 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { ChatMessage } from '../types/chat'
+import logoImg from '../assets/gastroteacher-logo.png'
 
 defineProps<{
   message: ChatMessage
   isDark: boolean
+  labels: {
+    you: string
+    assistant: string
+    escalatedTitle: string
+    escalatedDesc: string
+    whatsappBtn: string
+    emailBtn: string
+    cachedBadge: string
+    viewSources: string
+    hideSources: string
+    officialDocs: string
+  }
 }>()
 
 const showSources = ref(false)
 
 function formatContent(text: string) {
-  // Convert markdown bold, lists and paragraphs simply and safely
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-stone-900 dark:text-stone-100">$1</strong>')
     .replace(/^- (.*)$/gm, '<li class="ml-4 list-disc">$1</li>')
@@ -30,30 +42,31 @@ function formatContent(text: string) {
       :class="[
         message.role === 'user'
           ? isDark
-            ? 'bg-linear-to-r from-amber-700/80 to-orange-800/80 border-amber-600/40 text-amber-50 rounded-br-xs'
-            : 'bg-linear-to-r from-amber-600 to-orange-600 border-amber-500/50 text-white rounded-br-xs shadow-amber-900/10'
+            ? 'bg-gradient-to-br from-amber-700/80 to-orange-800/80 border-amber-600/40 text-amber-50 rounded-br-xs'
+            : 'bg-gradient-to-br from-amber-600 to-orange-600 border-amber-500/50 text-white rounded-br-xs shadow-amber-900/10'
           : isDark
             ? 'bg-stone-900/80 border-stone-800 text-stone-200 rounded-bl-xs'
             : 'bg-white/85 border-stone-200/90 text-stone-800 rounded-bl-xs'
       ]"
     >
       <!-- Message Header -->
-      <div class="flex items-center justify-between gap-3 mb-2 pb-1.5 border-b"
+      <div
+        class="flex items-center justify-between gap-3 mb-2 pb-1.5 border-b"
         :class="message.role === 'user' ? 'border-white/20' : 'border-stone-200/60 dark:border-stone-800/60'"
       >
         <div class="flex items-center gap-2">
           <!-- Role Icon -->
           <div
             v-if="message.role === 'assistant'"
-            class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-            :class="isDark ? 'bg-amber-600/30 text-amber-300' : 'bg-amber-100 text-amber-800'"
+            class="w-6 h-6 rounded-full overflow-hidden border border-stone-300 dark:border-stone-700 bg-white flex items-center justify-center shrink-0"
           >
-            AI
+            <img :src="logoImg" alt="Gastroteacher" class="w-full h-full object-cover" />
           </div>
-          <span class="text-xs font-semibold tracking-wide"
+          <span
+            class="text-xs font-semibold tracking-wide"
             :class="message.role === 'user' ? 'text-amber-100' : 'text-stone-700 dark:text-stone-300'"
           >
-            {{ message.role === 'user' ? 'Tú' : 'Gastroteacher Assistant' }}
+            {{ message.role === 'user' ? labels.you : labels.assistant }}
           </span>
         </div>
 
@@ -72,7 +85,7 @@ function formatContent(text: string) {
             : 'bg-rose-50/90 border-rose-200 text-rose-800'
         "
       >
-        <div class="p-1 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400 mt-0.5">
+        <div class="p-1 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400 mt-0.5 shrink-0">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/>
@@ -81,10 +94,10 @@ function formatContent(text: string) {
         </div>
         <div class="flex-1">
           <h4 class="text-xs font-bold uppercase tracking-wider">
-            Escalado al Equipo Humano de Soporte
+            {{ labels.escalatedTitle }}
           </h4>
           <p class="text-xs mt-0.5 opacity-90">
-            Esta consulta requiere atención humana o está fuera del alcance de los documentos del negocio.
+            {{ labels.escalatedDesc }}
           </p>
           <!-- Quick Contact Action Buttons -->
           <div class="mt-2.5 flex flex-wrap gap-2">
@@ -93,14 +106,14 @@ function formatContent(text: string) {
               target="_blank"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-xs"
             >
-              <span>WhatsApp Directo</span>
+              <span>{{ labels.whatsappBtn }}</span>
             </a>
             <a
               href="mailto:soporte@gastroteacher.edu.co"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors"
               :class="isDark ? 'bg-stone-800 border-stone-700 text-stone-200 hover:bg-stone-700' : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-100'"
             >
-              <span>Enviar Correo</span>
+              <span>{{ labels.emailBtn }}</span>
             </a>
           </div>
         </div>
@@ -108,7 +121,7 @@ function formatContent(text: string) {
 
       <!-- Message Content -->
       <div
-        class="text-sm leading-relaxed whitespace-pre-wrap wrap-break-word"
+        class="text-sm leading-relaxed whitespace-pre-wrap break-words"
         v-html="formatContent(message.content)"
       ></div>
 
@@ -124,17 +137,32 @@ function formatContent(text: string) {
             v-if="message.cached"
             class="px-2 py-0.5 rounded-md font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60 flex items-center gap-1"
           >
-            ⚡ Caché Rápido
+            <svg class="w-3 h-3 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span>{{ labels.cachedBadge }}</span>
           </span>
 
           <!-- Latency -->
           <span v-if="message.latency_ms !== undefined" class="flex items-center gap-1">
-            ⏱️ {{ message.latency_ms }} ms
+            <svg class="w-3 h-3 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>{{ message.latency_ms }} ms</span>
           </span>
 
           <!-- Tokens -->
           <span v-if="message.token_usage" class="flex items-center gap-1">
-            🔤 {{ message.token_usage.total_tokens }} tokens
+            <svg class="w-3 h-3 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+              <rect x="9" y="9" width="6" height="6"/>
+              <line x1="9" y1="1" x2="9" y2="4"/>
+              <line x1="15" y1="1" x2="15" y2="4"/>
+              <line x1="9" y1="20" x2="9" y2="23"/>
+              <line x1="15" y1="20" x2="15" y2="23"/>
+            </svg>
+            <span>{{ message.token_usage.total_tokens }} tokens</span>
           </span>
         </div>
 
@@ -149,7 +177,7 @@ function formatContent(text: string) {
           <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showSources }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"/>
           </svg>
-          <span>{{ showSources ? 'Ocultar fuentes' : `Ver ${message.sources.length} fuentes RAG` }}</span>
+          <span>{{ showSources ? labels.hideSources : labels.viewSources.replace('{count}', String(message.sources.length)) }}</span>
         </button>
       </div>
 
@@ -159,12 +187,12 @@ function formatContent(text: string) {
         class="mt-3 pt-3 border-t space-y-2 text-xs"
         :class="isDark ? 'border-stone-800' : 'border-stone-200'"
       >
-        <div class="font-semibold text-stone-600 dark:text-stone-300 flex items-center gap-1">
+        <div class="font-semibold text-stone-600 dark:text-stone-300 flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
           </svg>
-          <span>Documentos del Negocio Consultados:</span>
+          <span>{{ labels.officialDocs }}</span>
         </div>
 
         <div
@@ -174,10 +202,16 @@ function formatContent(text: string) {
           :class="isDark ? 'bg-stone-950/60 border-stone-800 text-stone-300' : 'bg-stone-50 border-stone-200/90 text-stone-700'"
         >
           <div class="flex items-center justify-between gap-2 mb-1">
-            <span class="font-semibold text-amber-700 dark:text-amber-400 truncate">
-              📄 {{ src.source }}
-            </span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-md font-mono bg-stone-200 dark:bg-stone-800">
+            <div class="flex items-center gap-1.5 truncate">
+              <svg class="w-3.5 h-3.5 text-stone-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span class="font-semibold text-amber-700 dark:text-amber-400 truncate">
+                {{ src.source }}
+              </span>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-md font-mono bg-stone-200 dark:bg-stone-800 shrink-0">
               Score: {{ (src.similarity_score * 100).toFixed(1) }}%
             </span>
           </div>

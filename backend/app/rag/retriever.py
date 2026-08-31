@@ -19,7 +19,48 @@ STOP_WORDS = {
     "esto", "mi", "antes", "algunos", "que", "unos", "yo", "otro", "otras", "otra", "el",
     "tanto", "esa", "estos", "mucho", "quienes", "nada", "muchos", "cual", "poco", "ella",
     "estar", "estas", "algunas", "algo", "nosotros", "hola", "buenas", "tardes", "dias",
-    "noches", "porfa", "favor", "quisiera", "saber", "tienen", "cuales", "cuanto", "como"
+    "noches", "porfa", "favor", "quisiera", "saber", "tienen", "cuales", "cuanto", "como",
+    "the", "and", "is", "are", "for", "with", "what", "how", "much", "about", "can", "you",
+    "tell", "me", "does", "have", "hello", "good", "morning", "afternoon", "evening", "please"
+}
+
+# Cross-language synonym mapping for bilingual RAG retrieval
+BILINGUAL_SYNONYMS = {
+    "price": "precio inversion valor costo",
+    "prices": "precios inversion valores costos",
+    "cost": "costo precio inversion valor",
+    "costs": "costos precios tarifas valores",
+    "fee": "tarifa mensualidad matricula",
+    "fees": "tarifas valores precios",
+    "payment": "pago cuota financiacion",
+    "payments": "pagos cuotas financiacion",
+    "financing": "financiacion credito cuotas",
+    "discount": "descuento promocion beca",
+    "discounts": "descuentos promociones becas",
+    "schedule": "horario jornada turno",
+    "schedules": "horarios jornadas turnos",
+    "hours": "horas horarios jornadas",
+    "weekend": "fin de semana sabado domingo",
+    "weekends": "fines de semana sabados domingos",
+    "weekday": "entre semana lunes jueves",
+    "weekdays": "entre semana lunes a jueves",
+    "saturday": "sabado sabados",
+    "sunday": "domingo domingos",
+    "enrollment": "matricula inscripcion admision",
+    "enroll": "matricular inscribir",
+    "registration": "inscripcion registro matricula",
+    "admission": "admision matricula ingreso",
+    "admissions": "admisiones matriculas",
+    "certificate": "certificado diploma acreditacion",
+    "certifications": "certificaciones diplomas certificados",
+    "course": "curso programa modulo",
+    "courses": "cursos programas modulos",
+    "program": "programa curso diplomado",
+    "programs": "programas cursos diplomados",
+    "level": "nivel niveles mcer",
+    "levels": "niveles nivel a1 a2 b1 b2 c1",
+    "modality": "modalidad presencial virtual online hibrida",
+    "modalities": "modalidades presencial online hibrida"
 }
 
 def normalize_text(text: str) -> str:
@@ -40,8 +81,15 @@ class RAGRetriever:
         if not keywords:
             return 0.0
 
-        matches = sum(1 for kw in keywords if kw in norm_doc)
-        return matches / len(keywords)
+        # Expand English keywords with Spanish equivalents
+        expanded_keywords = []
+        for kw in keywords:
+            expanded_keywords.append(kw)
+            if kw in BILINGUAL_SYNONYMS:
+                expanded_keywords.extend(BILINGUAL_SYNONYMS[kw].split())
+
+        matches = sum(1 for kw in expanded_keywords if kw in norm_doc)
+        return min(1.0, matches / len(keywords))
 
     def retrieve(self, query: str, top_k: int = None) -> Tuple[List[Dict[str, Any]], bool, str]:
         """
