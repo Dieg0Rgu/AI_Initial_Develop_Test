@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
         else:
             logger.info(f"Vector database ready with {vs.count()} chunks.")
     except Exception as e:
-        logger.error(f"Error during vector database initialization: {e}", exc_info=True)
+        logger.warning(f"[WARNING] Startup initialization skipped in serverless environment: {e}")
 
     yield
 

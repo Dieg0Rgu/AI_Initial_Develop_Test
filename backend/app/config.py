@@ -1,10 +1,13 @@
 from __future__ import annotations
+import os
 from pathlib import Path
 from typing import List
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict, field_validator
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+IS_SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+DEFAULT_CHROMA_PERSIST = "/tmp/chroma_db" if IS_SERVERLESS else str(BASE_DIR / "data" / "chroma_db")
 
 
 class Settings(BaseSettings):
@@ -33,7 +36,7 @@ class Settings(BaseSettings):
     MAX_TOKENS: int = 1024
 
     # ChromaDB & RAG Settings
-    CHROMA_PERSIST_DIR: str = str(BASE_DIR / "data" / "chroma_db")
+    CHROMA_PERSIST_DIR: str = DEFAULT_CHROMA_PERSIST
     CHROMA_COLLECTION_NAME: str = "gastroteacher_knowledge_base"
     DOCUMENTS_DIR: str = str(BASE_DIR / "data" / "documents")
     CHUNK_SIZE: int = 500

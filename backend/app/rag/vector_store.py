@@ -1,7 +1,6 @@
 from __future__ import annotations
-import os
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 
@@ -12,17 +11,32 @@ except ImportError:
     from backend.app.config import settings
     from backend.app.rag.embeddings import SmartEmbeddingFunction
 
+
 class ChromaVectorStore:
     def __init__(self, persist_dir: str = None, collection_name: str = None):
         self.persist_dir = persist_dir or settings.CHROMA_PERSIST_DIR
         self.collection_name = collection_name or settings.CHROMA_COLLECTION_NAME
-        Path(self.persist_dir).mkdir(parents=True, exist_ok=True)
-
         self.embedding_fn = SmartEmbeddingFunction()
-        self.client = chromadb.PersistentClient(
-            path=self.persist_dir,
-            settings=ChromaSettings(anonymized_telemetry=False)
-        )
+
+        # Resilient client initialization across local, serverless (/tmp) and in-memory
+        try:
+            Path(self.persist_dir).mkdir(parents=True, exist_ok=True)
+            self.client = chromadb.PersistentClient(
+                path=self.persist_dir,
+                settings=ChromaSettings(anonymized_telemetry=False)
+            )
+        except Exception:
+            try:
+                self.persist_dir = "/tmp/chroma_db"
+                Path(self.persist_dir).mkdir(parents=True, exist_ok=True)
+                self.client = chromadb.PersistentClient(
+                    path=self.persist_dir,
+                    settings=ChromaSettings(anonymized_telemetry=False)
+                )
+            except Exception:
+                self.client = chromadb.EphemeralClient(
+                    settings=ChromaSettings(anonymized_telemetry=False)
+                )
 
     def _get_collection(self):
         return self.client.get_or_create_collection(
