@@ -1,8 +1,18 @@
 {
   "version": 2,
+  "buildCommand": "cd frontend/Rage_frontend && npm install && npm run build",
+  "outputDirectory": "frontend/Rage_frontend/dist",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/docs",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/openapi.json",
       "destination": "/api/index.py"
     }
   ]
