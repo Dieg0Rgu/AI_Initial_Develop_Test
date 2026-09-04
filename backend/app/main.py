@@ -9,14 +9,14 @@ try:
     from app.config import settings
     from app.exceptions import GastroteacherException
     from app.utils.logger import logger
-    from app.api.routers import chat, documents, metrics, health, export
+    from app.api.routers import chat, documents, metrics, health, export, nonsense, auth
     from app.api.routers.documents import ingest_all_documents
     from app.rag.vector_store import ChromaVectorStore
 except ImportError:
     from backend.app.config import settings
     from backend.app.exceptions import GastroteacherException
     from backend.app.utils.logger import logger
-    from backend.app.api.routers import chat, documents, metrics, health, export
+    from backend.app.api.routers import chat, documents, metrics, health, export, nonsense, auth
     from backend.app.api.routers.documents import ingest_all_documents
     from backend.app.rag.vector_store import ChromaVectorStore
 
@@ -55,6 +55,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"]
 )
 
 
@@ -102,6 +103,8 @@ app.include_router(documents.router)
 app.include_router(metrics.router)
 app.include_router(health.router)
 app.include_router(export.router)
+app.include_router(nonsense.router)
+app.include_router(auth.router)
 
 
 @app.get("/")

@@ -97,8 +97,12 @@ const handleExportPdf = async () => {
     a.download = filename
     document.body.appendChild(a)
     a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    setTimeout(() => {
+      try {
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      } catch {}
+    }, 2500)
 
     alertSuccessMsg.value = filename
     notifySuccess('¡PDF Exportado!', `Descarga completada: ${filename}`)
@@ -124,8 +128,12 @@ const handleExportMd = async () => {
     a.download = filename
     document.body.appendChild(a)
     a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    setTimeout(() => {
+      try {
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      } catch {}
+    }, 2500)
 
     alertSuccessMsg.value = filename
     notifySuccess('¡Markdown Exportado!', `Descarga completada: ${filename}`)
@@ -151,8 +159,12 @@ const handleExportTxt = async () => {
     a.download = filename
     document.body.appendChild(a)
     a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    setTimeout(() => {
+      try {
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      } catch {}
+    }, 2500)
 
     alertSuccessMsg.value = filename
     notifySuccess('¡Texto TXT Exportado!', `Descarga completada: ${filename}`)
@@ -177,8 +189,12 @@ const handleDownloadDoc = async (filename: string) => {
     a.download = filename
     document.body.appendChild(a)
     a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    setTimeout(() => {
+      try {
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      } catch {}
+    }, 2500)
 
     alertSuccessMsg.value = filename
     notifySuccess('Documento Oficial Descargado', `Archivo: ${filename}`)

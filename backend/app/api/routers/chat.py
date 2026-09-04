@@ -9,6 +9,7 @@ try:
     from app.rag.retriever import RAGRetriever
     from app.llm.client import (
         OllamaClient,
+        LLMClient,
         normalize_simple,
         contains_profanity,
         is_gibberish,
@@ -21,12 +22,16 @@ try:
         IN_SCOPE_KEYWORDS
     )
     from app.cache.cache_service import response_cache
+    from app.cache.semantic_cache import semantic_cache
+    from app.cache.faq_service import faq_service
+    from app.api.routers.nonsense import check_out_of_scope
     from app.metrics.metrics_tracker import metrics_tracker
 except ImportError:
     from backend.app.config import settings
     from backend.app.rag.retriever import RAGRetriever
     from backend.app.llm.client import (
         OllamaClient,
+        LLMClient,
         normalize_simple,
         contains_profanity,
         is_gibberish,
@@ -39,6 +44,9 @@ except ImportError:
         IN_SCOPE_KEYWORDS
     )
     from backend.app.cache.cache_service import response_cache
+    from backend.app.cache.semantic_cache import semantic_cache
+    from backend.app.cache.faq_service import faq_service
+    from backend.app.api.routers.nonsense import check_out_of_scope
     from backend.app.metrics.metrics_tracker import metrics_tracker
 
 router = APIRouter(prefix="/api", tags=["Chat & RAG"])
@@ -135,9 +143,62 @@ async def process_chat(request: ChatRequest):
         or (len(words) == 1 and not detected_name and not has_academic_intent)
     ) and not has_academic_intent and not detected_name and not is_grupo_a
 
+    # 0. Check out of scope (nonsense, historical figures, external cooking recipes, etc.)
+    is_oos, oos_message = check_out_of_scope(query, lang)
+    if is_oos:
+        total_latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
+        metrics_tracker.record_query(
+            is_escalated=False,
+            prompt_tokens=len(query) // 4,
+            completion_tokens=len(oos_message) // 4,
+            latency_ms=total_latency_ms
+        )
+        return ChatResponse(
+            response=oos_message,
+            is_escalated=False,
+            cached=False,
+            sources=[],
+            token_usage=TokenUsage(
+                prompt_tokens=len(query) // 4,
+                completion_tokens=len(oos_message) // 4,
+                total_tokens=(len(query) + len(oos_message)) // 4
+            ),
+            latency_ms=total_latency_ms,
+            session_id=request.session_id
+        )
+
+    # 1. Check FAQ service (instant answers & 3-level progressive support for payment/registration)
+    faq_result = faq_service.match_faq(query, session_id=request.session_id, language=lang)
+    if faq_result is not None:
+        faq_answer, faq_escalated = faq_result
+        cleaned_faq = faq_answer.replace("[ESCALATE_HUMAN]", "").strip()
+        total_latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
+        p_tok = len(query) // 4
+        c_tok = len(cleaned_faq) // 4
+        metrics_tracker.record_query(
+            is_escalated=faq_escalated,
+            prompt_tokens=p_tok,
+            completion_tokens=c_tok,
+            latency_ms=total_latency_ms
+        )
+        return ChatResponse(
+            response=cleaned_faq,
+            is_escalated=faq_escalated,
+            cached=False,
+            sources=[],
+            token_usage=TokenUsage(
+                prompt_tokens=p_tok,
+                completion_tokens=c_tok,
+                total_tokens=p_tok + c_tok
+            ),
+            latency_ms=total_latency_ms,
+            session_id=request.session_id
+        )
+
     cache_key = f"{lang}:{query}"
 
     # 1. Check cache if not bypassed
+    # 2. Check exact cache if not bypassed
     if not request.bypass_cache and not is_grupo_a:
         cached_result = response_cache.get(cache_key)
         if cached_result:
@@ -159,12 +220,35 @@ async def process_chat(request: ChatRequest):
             )
 
     # 2. Retrieve relevant chunks from ChromaDB (Skip if greeting, nonsense, or Grupo A escalation)
+        # 3. Check semantic cache if not bypassed
+        semantic_hit = semantic_cache.get(query, language=lang)
+        if semantic_hit is not None:
+            cached_result, sim_score = semantic_hit
+            latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
+            metrics_tracker.record_query(
+                is_escalated=cached_result.get("is_escalated", False),
+                prompt_tokens=0,
+                completion_tokens=0,
+                latency_ms=latency_ms
+            )
+            return ChatResponse(
+                response=cached_result["response"],
+                is_escalated=cached_result.get("is_escalated", False),
+                cached=True,
+                sources=cached_result.get("sources", []),
+                token_usage=TokenUsage(**cached_result.get("token_usage", {})),
+                latency_ms=latency_ms,
+                session_id=request.session_id
+            )
+
+    # 4. Retrieve relevant chunks from ChromaDB (Skip if greeting, nonsense, or Grupo A escalation)
     if is_greeting or is_isolated_nonsense or detected_name or has_vulgarity or gibberish or is_grupo_a:
         chunks, is_relevant, context = [], False, ""
     else:
         chunks, is_relevant, context = _retriever.retrieve(query)
 
     # 3. Format sources
+    # 5. Format sources
     formatted_sources = [
         SourceDocument(
             id=c["id"],
@@ -178,6 +262,7 @@ async def process_chat(request: ChatRequest):
     ]
 
     # 4. Generate answer with Ollama (or fallback)
+    # 6. Generate answer with LLM providers (or fallback)
     response_text, is_escalated, token_usage, llm_latency = await _llm_client.generate_response(
         query=query,
         context=context,
@@ -196,8 +281,10 @@ async def process_chat(request: ChatRequest):
     }
 
     # 5. Store in cache if not an escalated error
+    # 7. Store in caches if not an escalated error
     if not is_escalated:
         response_cache.set(cache_key, response_data)
+        semantic_cache.set(query, lang, response_data)
 
     # 6. Record metrics
     metrics_tracker.record_query(

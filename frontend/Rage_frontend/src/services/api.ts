@@ -181,15 +181,36 @@ export async function downloadOfficialDocFile(filename: string): Promise<Blob> {
 }
 
 export async function fetchMetrics(): Promise<MetricsSummary> {
-  const res = await fetch(`${API_BASE}/api/metrics`)
+  const token = getAuthToken()
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const res = await fetch(`${API_BASE}/api/metrics`, { headers })
   if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error('401_UNAUTHORIZED')
+    }
     throw new Error('Failed to fetch metrics')
   }
   return await res.json()
 }
 
 export async function resetMetrics(): Promise<void> {
-  await fetch(`${API_BASE}/api/metrics/reset`, { method: 'POST' })
+  const token = getAuthToken()
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const res = await fetch(`${API_BASE}/api/metrics/reset`, { method: 'POST', headers })
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error('401_UNAUTHORIZED')
+    }
+    throw new Error('Failed to reset metrics')
+  }
 }
 
 export async function fetchHealth(): Promise<HealthStatus> {
@@ -199,3 +220,103 @@ export async function fetchHealth(): Promise<HealthStatus> {
   }
   return await res.json()
 }
+
+// -------------------------------------------------------------
+// Authentication Services (Login & Register for Metrics)
+// -------------------------------------------------------------
+const AUTH_TOKEN_KEY = 'gastroteacher_auth_token'
+const AUTH_USER_KEY = 'gastroteacher_auth_user'
+
+export function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setAuthSession(token: string, user: any) {
+  try {
+    localStorage.setItem(AUTH_TOKEN_KEY, token)
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user))
+  } catch {}
+}
+
+export function getStoredUser(): any | null {
+  try {
+    const raw = localStorage.getItem(AUTH_USER_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+export function clearAuthSession() {
+  try {
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    localStorage.removeItem(AUTH_USER_KEY)
+  } catch {}
+}
+
+export async function loginUser(usernameOrEmail: string, password: string): Promise<{ token: string; user: any }> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username_or_email: usernameOrEmail,
+      password: password
+    })
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Error al iniciar sesión.')
+  }
+
+  const data = await res.json()
+  setAuthSession(data.token, data.user)
+  return data
+}
+
+export async function registerUser(payload: {
+  email: string
+  username: string
+  password: string
+  full_name: string
+  role?: string
+}): Promise<{ token: string; user: any }> {
+  const res = await fetch(`${API_BASE}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Error al registrar la cuenta.')
+  }
+
+  const data = await res.json()
+  setAuthSession(data.token, data.user)
+  return data
+}
+
+export async function fetchCurrentUser(): Promise<any | null> {
+  const token = getAuthToken()
+  if (!token) return null
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (!res.ok) {
+      clearAuthSession()
+      return null
+    }
+    const data = await res.json()
+    return data.user
+  } catch {
+    return null
+  }
+}
+

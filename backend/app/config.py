@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import List
+from typing import List, Any, Union
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict, field_validator
 
@@ -12,7 +13,7 @@ DEFAULT_CHROMA_PERSIST = "/tmp/chroma_db" if IS_SERVERLESS else str(BASE_DIR / "
 
 class Settings(BaseSettings):
     model_config = ConfigDict(
-        env_file=".env",
+        env_file=(str(BASE_DIR.parent / ".env"), str(BASE_DIR / ".env"), ".env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )
@@ -44,10 +45,24 @@ class Settings(BaseSettings):
     SIMILARITY_THRESHOLD: float = 0.45  # Relevance threshold for cosine distance
     TOP_K_RESULTS: int = 3
 
+    # External LLM Providers & API Key Rotation Settings
+    LLM_PROVIDERS: Union[List[str], str] = ["groq", "gemini", "openai", "ollama"]
+    GROQ_API_KEYS: Union[List[str], str] = []
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
+    GEMINI_API_KEYS: Union[List[str], str] = []
+    GEMINI_MODEL: str = "gemini-flash-latest"
+    OPENAI_API_KEYS: Union[List[str], str] = []
+    OPENAI_MODEL: str = "gpt-3.5-turbo"
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+
     # Caching Settings
     CACHE_ENABLED: bool = True
     CACHE_TTL_SECONDS: int = 3600
     MAX_CACHE_SIZE: int = 500
+    SEMANTIC_CACHE_ENABLED: bool = True
+    SEMANTIC_CACHE_THRESHOLD: float = 0.88
+    SEMANTIC_CACHE_MAX_SIZE: int = 500
+    METRICS_AUTH_REQUIRED: bool = False
 
     # Human Escalation Settings
     ESCALATION_EMAIL: str = "edig0rgudevia@gmail.com"
@@ -83,6 +98,26 @@ class Settings(BaseSettings):
         if v >= chunk_size:
             raise ValueError("CHUNK_OVERLAP must be strictly smaller than CHUNK_SIZE.")
         return v
+
+    @field_validator("SEMANTIC_CACHE_THRESHOLD")
+    @classmethod
+    def validate_semantic_threshold(cls, v: float) -> float:
+        if v <= 0.05:
+            return 0.88
+        if not (0.0 <= v <= 1.0):
+            raise ValueError("SEMANTIC_CACHE_THRESHOLD must be between 0.0 and 1.0.")
+        return v
+
+    @field_validator("LLM_PROVIDERS", "GROQ_API_KEYS", "GEMINI_API_KEYS", "OPENAI_API_KEYS", mode="after")
+    @classmethod
+    def parse_comma_separated_list(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            if not v.strip():
+                return []
+            return [item.strip() for item in v.split(",") if item.strip()]
+        if isinstance(v, list):
+            return [str(item).strip() for item in v if str(item).strip()]
+        return []
 
 
 settings = Settings()

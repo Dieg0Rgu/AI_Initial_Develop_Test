@@ -5,13 +5,21 @@ import moment from 'moment'
 import 'moment/locale/es'
 import type { ChatMessage } from './types/chat'
 import { translations, type Language } from './i18n/translations'
-import { sendChatMessage, fetchHealth, fetchMetrics } from './services/api'
+import {
+  sendChatMessage,
+  fetchHealth,
+  fetchMetrics,
+  fetchCurrentUser,
+  clearAuthSession,
+  exportChatPdf
+} from './services/api'
 import Navbar from './components/Navbar.vue'
 import QuickPrompts from './components/QuickPrompts.vue'
 import ChatMessageItem from './components/ChatMessage.vue'
 import MetricsModal from './components/MetricsModal.vue'
 import ExportPdfModal from './components/ExportPdfModal.vue'
 import EscalationToast from './components/EscalationToast.vue'
+import AuthModal from './components/AuthModal.vue'
 
 // State
 const isDark = ref(true)
@@ -20,6 +28,9 @@ const isOnline = ref(true)
 const totalQueries = ref(0)
 const showMetrics = ref(false)
 const showExportPdf = ref(false)
+const showAuthModal = ref(false)
+const currentUser = ref<any | null>(null)
+const isExportingDirectPdf = ref(false)
 
 // Escalation Toast notification state
 const showEscalationToast = ref(false)
@@ -171,12 +182,98 @@ async function clearChat() {
   }
 }
 
-onMounted(() => {
+function openMetricsProtected() {
+  if (currentUser.value) {
+    showMetrics.value = true
+  } else {
+    showAuthModal.value = true
+  }
+}
+
+function handleAuthenticated(user: any) {
+  currentUser.value = user
+  showAuthModal.value = false
+  showMetrics.value = true
+}
+
+function handleLogout() {
+  clearAuthSession()
+  currentUser.value = null
+  showMetrics.value = false
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'info',
+    title: 'Sesión Finalizada',
+    text: 'Has cerrado sesión correctamente.',
+    showConfirmButton: false,
+    timer: 2500,
+    background: isDark.value ? '#1c1917' : '#ffffff',
+    color: isDark.value ? '#f5f5f4' : '#1c1917'
+  })
+}
+
+async function handleDirectExportPdf() {
+  if (isExportingDirectPdf.value || messages.value.length === 0) return
+  isExportingDirectPdf.value = true
+  try {
+    const filename = `gastroteacher_chat_${Date.now()}.pdf`
+    const blob = await exportChatPdf(messages.value, 'web_session')
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    setTimeout(() => {
+      try {
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      } catch {}
+    }, 2500)
+
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: '¡PDF Descargado!',
+      text: `Archivo guardado: ${filename}`,
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      background: isDark.value ? '#1c1917' : '#ffffff',
+      color: isDark.value ? '#f5f5f4' : '#1c1917',
+      iconColor: '#10b981'
+    })
+  } catch (err: any) {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'error',
+      title: 'Error de exportación',
+      text: err.message || 'No se pudo generar el archivo PDF.',
+      showConfirmButton: false,
+      timer: 4000,
+      background: isDark.value ? '#1c1917' : '#ffffff',
+      color: isDark.value ? '#f5f5f4' : '#1c1917'
+    })
+  } finally {
+    isExportingDirectPdf.value = false
+  }
+}
+
+onMounted(async () => {
   moment.locale('es')
   if (isDark.value) {
     document.documentElement.classList.add('dark')
   }
   checkSystemHealth()
+  try {
+    const user = await fetchCurrentUser()
+    if (user) {
+      currentUser.value = user
+    }
+  } catch {}
 })
 </script>
 
@@ -231,7 +328,7 @@ onMounted(() => {
       }"
       @toggle-theme="toggleTheme"
       @toggle-lang="toggleLanguage"
-      @open-metrics="showMetrics = true"
+      @open-metrics="openMetricsProtected"
       @open-export-pdf="showExportPdf = true"
     />
 
@@ -239,13 +336,50 @@ onMounted(() => {
     <main class="relative z-10 flex-1 max-w-5xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-4">
       <!-- Chat Card Window -->
       <div
-        class="flex-1 flex flex-col rounded-3xl backdrop-blur-2xl border shadow-xl transition-all duration-300 overflow-hidden min-h-[580px] max-h-[calc(100vh-140px)]"
+        class="flex-1 flex flex-col rounded-3xl backdrop-blur-2xl border shadow-xl transition-all duration-300 overflow-hidden min-h-145 max-h-[calc(100vh-140px)]"
         :class="
           isDark
             ? 'bg-stone-900/60 border-stone-800/80 shadow-black/40'
             : 'bg-white/90 border-stone-300 shadow-stone-300/40'
         "
       >
+        <!-- Chat Top Action Bar -->
+        <div
+          class="px-4 sm:px-6 py-2.5 border-b flex items-center justify-between gap-3 text-xs font-bold shrink-0"
+          :class="isDark ? 'border-stone-800/80 bg-stone-900/50 text-stone-300' : 'border-stone-200 bg-stone-50/80 text-stone-700'"
+        >
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span class="font-black text-stone-900 dark:text-stone-100">Asistente Virtual Oficial</span>
+            <span class="text-[11px] opacity-70">({{ messages.length }} mensajes)</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Direct PDF Export Button -->
+            <button
+              type="button"
+              @click="handleDirectExportPdf"
+              :disabled="isExportingDirectPdf || messages.length === 0"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all hover:scale-102 active:scale-98 disabled:opacity-50 cursor-pointer shadow-xs"
+              :class="isDark ? 'bg-stone-800 hover:bg-stone-700 border-stone-700 text-rose-300' : 'bg-white hover:bg-rose-50 border-stone-300 text-rose-700'"
+              title="Descargar conversación actual en PDF con 1 clic"
+            >
+              <svg v-if="!isExportingDirectPdf" class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="12" y2="18"/>
+                <line x1="15" y1="15" x2="12" y2="18"/>
+              </svg>
+              <svg v-else class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+              </svg>
+              <span>{{ isExportingDirectPdf ? 'Generando PDF...' : 'Descargar PDF' }}</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Conversation Area -->
         <div
           ref="chatContainer"
@@ -350,8 +484,8 @@ onMounted(() => {
                 class="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all duration-200 shadow-md hover:scale-102 active:scale-98 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                 :class="
                   isDark
-                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-amber-900/20'
-                    : 'bg-gradient-to-r from-amber-700 to-orange-700 hover:from-amber-800 hover:to-orange-800 text-white shadow-amber-900/20'
+                    ? 'bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-amber-900/20'
+                    : 'bg-linear-to-r from-amber-700 to-orange-700 hover:from-amber-800 hover:to-orange-800 text-white shadow-amber-900/20'
                 "
               >
                 <span>{{ t.sendBtn }}</span>
@@ -370,6 +504,7 @@ onMounted(() => {
     <MetricsModal
       v-if="showMetrics"
       :is-dark="isDark"
+      :current-user="currentUser"
       :labels="{
         metricsTitle: t.metricsTitle,
         metricsSubtitle: t.metricsSubtitle,
@@ -399,7 +534,17 @@ onMounted(() => {
         sweetAlertOkBtn: t.sweetAlertOkBtn
       }"
       @metrics-reset="totalQueries = 0"
+      @logout="handleLogout"
+      @unauthorized="showMetrics = false; showAuthModal = true"
       @close="showMetrics = false"
+    />
+
+    <!-- Authentication Modal (Login & Register for Metrics) -->
+    <AuthModal
+      :is-open="showAuthModal"
+      :is-dark="isDark"
+      @authenticated="handleAuthenticated"
+      @close="showAuthModal = false"
     />
 
     <!-- PDF Export Modal -->

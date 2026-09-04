@@ -6,6 +6,7 @@ import { fetchMetrics, resetMetrics } from '../services/api'
 
 const props = defineProps<{
   isDark: boolean
+  currentUser?: any | null
   labels: {
     metricsTitle: string
     metricsSubtitle: string
@@ -39,6 +40,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'metricsReset'): void
+  (e: 'logout'): void
+  (e: 'unauthorized'): void
 }>()
 
 const metrics = ref<MetricsSummary | null>(null)
@@ -49,7 +52,12 @@ async function loadMetrics() {
   loading.value = true
   try {
     metrics.value = await fetchMetrics()
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message === '401_UNAUTHORIZED') {
+      emit('unauthorized')
+      emit('close')
+      return
+    }
     console.error('Failed to load metrics', err)
   } finally {
     loading.value = false
@@ -128,16 +136,34 @@ onMounted(() => {
           </div>
         </div>
 
-        <button
-          type="button"
-          @click="emit('close')"
-          class="p-2 rounded-xl text-stone-600 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-200 transition-colors cursor-pointer"
-        >
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <div
+            v-if="currentUser"
+            class="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-xl border text-[11px] font-bold"
+            :class="isDark ? 'bg-stone-800/80 border-stone-700 text-stone-300' : 'bg-stone-100 border-stone-300 text-stone-800'"
+          >
+            <span>👤 {{ currentUser.full_name || currentUser.username }}</span>
+            <button
+              type="button"
+              @click="emit('logout')"
+              class="text-[10px] font-black text-rose-600 dark:text-rose-400 hover:underline cursor-pointer ml-1"
+              title="Cerrar sesión"
+            >
+              Salir
+            </button>
+          </div>
+
+          <button
+            type="button"
+            @click="emit('close')"
+            class="p-2 rounded-xl text-stone-600 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-200 transition-colors cursor-pointer"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="18" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Loading State -->

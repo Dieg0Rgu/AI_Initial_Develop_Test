@@ -269,12 +269,29 @@ def is_english_query(norm_q: str, words: list[str], language: Optional[str] = No
     return any(w in en_signals for w in words) or norm_q in GREETING_WORDS_EN or norm_q in NONSENSE_KEYWORDS_EN
 
 
-class OllamaClient:
-    def __init__(self, base_url: str = None, model: str = None):
+class LLMClient:
+    def __init__(self, base_url: str = None, model: str = None, **kwargs):
         self.base_url = base_url or settings.OLLAMA_BASE_URL
         self.model = model or settings.OLLAMA_MODEL
         self.temperature = settings.LLM_TEMPERATURE
         self.max_tokens = settings.MAX_TOKENS
+
+        # External Providers & Models Configuration
+        self.providers = list(getattr(settings, "LLM_PROVIDERS", ["groq", "gemini", "openai", "ollama"]))
+        self.groq_api_keys = list(getattr(settings, "GROQ_API_KEYS", []))
+        self.groq_model = getattr(settings, "GROQ_MODEL", "llama-3.1-8b-instant")
+        self.gemini_api_keys = list(getattr(settings, "GEMINI_API_KEYS", []))
+        self.gemini_model = getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
+        self.openai_api_keys = list(getattr(settings, "OPENAI_API_KEYS", []))
+        self.openai_model = getattr(settings, "OPENAI_MODEL", "gpt-3.5-turbo")
+        self.openai_base_url = getattr(settings, "OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        # Circular rotation index per provider
+        self._provider_indices: Dict[str, int] = {
+            "groq": 0,
+            "gemini": 0,
+            "openai": 0
+        }
 
     async def is_healthy(self) -> bool:
         """Check if local Ollama daemon is reachable and running."""
@@ -285,6 +302,10 @@ class OllamaClient:
         except Exception as e:
             logger.warning(f"Ollama health check failed: {e}")
             return False
+
+    def is_cloud_available(self) -> bool:
+        """Returns True if external providers have configured API keys."""
+        return bool(self.groq_api_keys or self.gemini_api_keys or self.openai_api_keys)
 
     def _fallback_generate(self, query: str, context: str, is_relevant: bool, language: str = 'es') -> Tuple[str, bool, Dict[str, int]]:
         """
@@ -729,6 +750,41 @@ class OllamaClient:
 
         messages = build_rag_prompt(query, context, language)
 
+        # 1. Try configured providers in order of priority (e.g. ['groq', 'gemini', 'openai', 'ollama'])
+        for prov in self.providers:
+            prov_lower = prov.lower().strip()
+            result = None
+
+            if prov_lower == "ollama":
+                result = await self._query_ollama(messages, query, context)
+            elif prov_lower in ("groq", "gemini", "openai"):
+                result = await self._query_external_provider(prov_lower, messages, query, context)
+
+            if result is not None:
+                raw_content, token_usage = result
+                is_escalated = "[ESCALATE_HUMAN]" in raw_content or forced_escalation
+                cleaned_content = raw_content.replace("[ESCALATE_HUMAN]", "").strip()
+                if "<think>" in cleaned_content and "</think>" in cleaned_content:
+                    cleaned_content = re.sub(r'<think>.*?</think>', '', cleaned_content, flags=re.DOTALL).strip()
+                latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
+                logger.info(f"{prov.upper()} response generated in {latency_ms}ms (escalated: {is_escalated})")
+                return cleaned_content, is_escalated, token_usage, latency_ms
+
+        # 2. Fallback if all providers failed or are not configured
+        logger.warning("All LLM providers unavailable or exhausted. Activating deterministic grounded fallback.")
+        answer, is_escalated, token_usage = self._fallback_generate(query, context, is_relevant and not forced_escalation, language)
+        cleaned_content = answer.replace("[ESCALATE_HUMAN]", "").strip()
+        latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+        logger.info(f"Fallback response generated in {latency_ms:.2f}ms (escalated: {is_escalated})")
+        return cleaned_content, is_escalated, token_usage, latency_ms
+
+    async def _query_ollama(
+        self,
+        messages: list[dict],
+        query: str,
+        context: str
+    ) -> Optional[Tuple[str, Dict[str, int]]]:
         try:
             async with httpx.AsyncClient(base_url=self.base_url, timeout=30.0) as client:
                 res = await client.post("/api/chat", json={
@@ -740,35 +796,100 @@ class OllamaClient:
                         "num_predict": self.max_tokens
                     }
                 })
-
                 if res.status_code == 200:
                     data = res.json()
                     raw_content = data.get("message", {}).get("content", "")
-
-                    is_escalated = "[ESCALATE_HUMAN]" in raw_content or forced_escalation
-                    cleaned_content = raw_content.replace("[ESCALATE_HUMAN]", "").strip()
-
                     prompt_tokens = data.get("prompt_eval_count", len(query + context) // 4)
-                    completion_tokens = data.get("eval_count", len(cleaned_content) // 4)
-
+                    completion_tokens = data.get("eval_count", len(raw_content) // 4)
                     token_usage = {
                         "prompt_tokens": prompt_tokens,
                         "completion_tokens": completion_tokens,
                         "total_tokens": prompt_tokens + completion_tokens
                     }
-                    latency_ms = (time.perf_counter() - start_time) * 1000
-                    logger.info(f"Ollama response generated in {latency_ms:.2f}ms (escalated: {is_escalated})")
-                    return cleaned_content, is_escalated, token_usage, round(latency_ms, 2)
+                    return raw_content, token_usage
                 else:
-                    logger.warning(f"Ollama returned status {res.status_code}. Activating deterministic fallback.")
-
+                    logger.warning(f"Ollama returned status {res.status_code}")
         except Exception as e:
-            logger.warning(f"Ollama unavailable or exception ({e}). Activating deterministic grounded fallback.")
+            logger.warning(f"Ollama call exception: {e}")
+        return None
 
-        # Deterministic grounded fallback with strict classification
-        answer, is_escalated, token_usage = self._fallback_generate(query, context, is_relevant and not forced_escalation, language)
-        cleaned_content = answer.replace("[ESCALATE_HUMAN]", "").strip()
-        latency_ms = (time.perf_counter() - start_time) * 1000
+    async def _query_external_provider(
+        self,
+        provider: str,
+        messages: list[dict],
+        query: str,
+        context: str
+    ) -> Optional[Tuple[str, Dict[str, int]]]:
+        if provider == "groq":
+            keys = self.groq_api_keys
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            model = self.groq_model
+        elif provider == "gemini":
+            keys = self.gemini_api_keys
+            url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+            model = self.gemini_model
+        elif provider == "openai":
+            keys = self.openai_api_keys
+            url = f"{self.openai_base_url}/chat/completions"
+            model = self.openai_model
+        else:
+            return None
 
-        logger.info(f"Fallback response generated in {latency_ms:.2f}ms (escalated: {is_escalated})")
-        return cleaned_content, is_escalated, token_usage, round(latency_ms, 2)
+        if not keys:
+            return None
+
+        num_keys = len(keys)
+        start_idx = self._provider_indices.get(provider, 0) % num_keys
+
+        for attempt in range(num_keys):
+            curr_idx = (start_idx + attempt) % num_keys
+            key = keys[curr_idx]
+            headers = {
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": model,
+                "messages": messages,
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens
+            }
+
+            try:
+                async with httpx.AsyncClient(timeout=25.0) as client:
+                    res = await client.post(url, json=payload, headers=headers)
+                    if res.status_code == 200:
+                        data = res.json()
+                        choices = data.get("choices", [])
+                        raw_content = choices[0].get("message", {}).get("content", "") if choices else data.get("message", {}).get("content", "")
+                        usage = data.get("usage", {})
+                        p_tok = usage.get("prompt_tokens", len(query + context) // 4)
+                        c_tok = usage.get("completion_tokens", len(raw_content) // 4)
+                        token_usage = {
+                            "prompt_tokens": p_tok,
+                            "completion_tokens": c_tok,
+                            "total_tokens": usage.get("total_tokens", p_tok + c_tok)
+                        }
+                        self._provider_indices[provider] = curr_idx
+                        logger.info(f"Provider {provider} (key #{curr_idx + 1}) successfully generated response.")
+                        return raw_content, token_usage
+
+                    elif res.status_code in (429, 401, 403):
+                        logger.warning(
+                            f"Provider {provider} key #{curr_idx + 1} returned status {res.status_code}. "
+                            f"Rotating to next key..."
+                        )
+                        self._provider_indices[provider] = (curr_idx + 1) % num_keys
+                    else:
+                        logger.warning(
+                            f"Provider {provider} returned status {res.status_code}: {res.text[:200]}"
+                        )
+            except Exception as e:
+                logger.warning(f"Error calling {provider} key #{curr_idx + 1}: {e}")
+                self._provider_indices[provider] = (curr_idx + 1) % num_keys
+
+        return None
+
+
+# Backward compatibility alias
+OllamaClient = LLMClient

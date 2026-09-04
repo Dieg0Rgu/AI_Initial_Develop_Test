@@ -1,0 +1,123 @@
+{
+  "multi_level_support": {
+    "payment_issues": {
+      "keywords": [
+        "problema con el pago",
+        "problema de pago",
+        "problemas para pagar",
+        "problema para pagar",
+        "no puedo pagar",
+        "falla el pago",
+        "error al pagar",
+        "rechazo de pago",
+        "pse no funciona",
+        "tarjeta rechazada",
+        "problema con pago",
+        "error en la pasarela",
+        "payment issue",
+        "payment problem",
+        "cannot pay"
+      ],
+      "followup_keywords": [
+        "aun tengo el problema",
+        "aún tengo el problema",
+        "no pude solucionar",
+        "no he podido solucionar",
+        "sigue igual",
+        "no funciona",
+        "persiste el error",
+        "todavia no puedo",
+        "todavía no puedo",
+        "continua el problema",
+        "continúa el problema",
+        "still have the problem",
+        "still not working",
+        "did not solve"
+      ],
+      "level_1": {
+        "es": "Entiendo tu inconveniente con el pago. Vamos a intentar resolverlo rápidamente con los siguientes pasos de verificación (Nivel 1):\n\n1. **Verificación de navegador**: Intenta abrir la pasarela en una ventana de incógnito o borra la caché y cookies de tu navegador.\n2. **Fondos y topes diarios**: Confirma con tu entidad bancaria que tu cuenta o tarjeta tenga habilitadas compras en línea y saldo suficiente para transacciones por internet.\n3. **Bloqueador de ventanas emergentes (Pop-ups)**: Si usas PSE, asegúrate de que tu navegador permita ventanas emergentes para la redirección a tu banco.\n4. **Pasarelas disponibles**: Puedes realizar el pago mediante PSE, Tarjeta de Crédito/Débito (Visa, Mastercard, Amex) o transferencia directa Bancolombia.\n\nPor favor intenta nuevamente siguiendo estos pasos. Si después de intentarlo el problema continúa, escríbeme: *'Aún tengo el problema'* para brindarte alternativas de soporte avanzado.",
+        "en": "I understand your issue with the payment. Let's try to resolve it quickly with these Level 1 verification steps:\n\n1. **Browser Check**: Try opening the payment gateway in an incognito window or clear your browser cache and cookies.\n2. **Online Purchasing Limits**: Check with your bank that online transactions and international/e-commerce purchases are enabled.\n3. **Pop-up Blocker**: If using PSE or bank redirects, ensure your browser allows pop-ups.\n4. **Alternative methods**: You can pay via PSE, Credit/Debit card (Visa, Mastercard, Amex), or direct Bancolombia transfer.\n\nPlease try again following these steps. If the issue persists, reply with: *'Still have the problem'* to proceed to Level 2 support."
+      },
+      "level_2": {
+        "es": "Lamento que el problema persista. Pasamos al **Soporte Técnico de Pagos (Nivel 2)** con alternativas directas:\n\n1. **Enlace de Pago Alternativo Directo**: Puedes solicitar un link directo de Wompi / MercadoPago seguro sin pasar por el carrito web.\n2. **Transferencia Directa Bancolombia / Nequi**:\n   - Cuenta Corriente Bancolombia: No. 245-893210-44 (A nombre de Gastroteacher SAS - NIT 901.458.789-1).\n   - Llave Nequi / Daviplata autorizada: (+57) 313 730 1501.\n3. **Comprobante de débito**: Si el dinero fue debitado de tu cuenta bancaria pero la plataforma no se actualizó, conserva el número de comprobante o pantallazo (ID de transacción CUS de PSE).\n\nSi ya realizaste la transferencia o necesitas validación inmediata de tu comprobante bancario, respóndeme con *'No pude solucionar'* para comunicarte de inmediato con un asesor humano de tesorería.",
+        "en": "Sorry to hear the issue persists. We are now escalating to **Payment Support Level 2** with direct alternatives:\n\n1. **Direct Alternative Payment Link**: You can request an isolated Wompi or card payment link without using the cart.\n2. **Direct Bank Wire (Bancolombia)**:\n   - Checking Account: No. 245-893210-44 (Gastroteacher SAS - NIT 901.458.789-1).\n3. **Debit Verification**: If your bank debited the amount but the portal didn't update, save your transaction CUS/voucher.\n\nIf you have already transferred or need immediate manual verification, reply *'Did not solve'* to connect directly with our human finance team."
+      },
+      "level_3": {
+        "es": "[ESCALATE_HUMAN] Hemos escalado tu caso al **Equipo Humano de Pagos y Tesorería (Nivel 3)** para atención prioritaria.\n\nPor favor contáctanos con tu comprobante o número de identificación para validar y activar tu acceso manualmente:\n- **WhatsApp directo de Tesorería**: +57 313 730 1501\n- **Correo**: edig0rgudevia@gmail.com\n- **Horario**: Lunes a Viernes 8:00 AM - 6:00 PM (COT)\n\nUn asesor humano validará tu transacción de inmediato.",
+        "en": "[ESCALATE_HUMAN] We have escalated your case to our **Human Treasury & Support Team (Level 3)** for priority review.\n\nPlease contact us with your payment receipt or ID number to manually activate your access:\n- **Direct WhatsApp Support**: +57 313 730 1501\n- **Email**: edig0rgudevia@gmail.com\n- **Hours**: Monday to Friday 8:00 AM - 6:00 PM (COT)\n\nA human specialist will assist you promptly."
+      }
+    },
+    "registration_issues": {
+      "keywords": [
+        "problema con el registro",
+        "problema para registrarme",
+        "no puedo registrarme",
+        "error al registrarme",
+        "falla el registro",
+        "error en el formulario",
+        "no puedo crear mi cuenta",
+        "registration issue",
+        "cannot register"
+      ],
+      "followup_keywords": [
+        "aun tengo el problema",
+        "aún tengo el problema",
+        "no pude solucionar",
+        "sigue igual",
+        "no funciona"
+      ],
+      "level_1": {
+        "es": "Para resolver inconvenientes al registrarte en Gastroteacher (Nivel 1):\n\n1. **Campos requeridos**: Verifica que tu correo no tenga espacios al inicio o final y que el número de teléfono incluya el indicativo (ej. +57 para Colombia).\n2. **Contraseña**: Debe contener al menos 8 caracteres, una mayúscula y un número.\n3. **Correo de confirmación**: Revisa tu carpeta de Spam o Correo no deseado si estás esperando el código de verificación OTP.\n\nSi realizaste estas validaciones y aún no puedes completar el registro, escribe: *'Aún tengo el problema'* para asistirte en Nivel 2.",
+        "en": "To troubleshoot registration issues (Level 1):\n\n1. **Required Fields**: Ensure your email has no trailing spaces and your phone number includes country code (+57 for Colombia).\n2. **Password**: Must have at least 8 characters, one uppercase letter, and one number.\n3. **Confirmation email**: Check your Spam or Promotions folder for the verification code.\n\nIf you checked this and still cannot register, reply *'Still have the problem'* to proceed to Level 2."
+      },
+      "level_2": {
+        "es": "[ESCALATE_HUMAN] Soporte de Registro (Nivel 2):\n\nParece que hay una inconsistencia en tu perfil o tu correo ya se encuentra registrado previamente en nuestra base de datos. Para no hacerte perder tiempo, nuestro equipo de admisiones creará tu cuenta manualmente:\n- **WhatsApp Admisiones**: +57 313 730 1501\n- **Correo**: edig0rgudevia@gmail.com\n\nEnvíanos tu nombre completo y correo para darte de alta de inmediato.",
+        "en": "[ESCALATE_HUMAN] Registration Support (Level 2):\n\nIt seems your email may already be registered or requires manual onboarding. Our admissions team can set up your account directly:\n- **WhatsApp Admissions**: +57 313 730 1501\n- **Email**: edig0rgudevia@gmail.com\n\nSend us your full name and email to get started right away."
+      }
+    }
+  },
+  "static_faqs": [
+    {
+      "id": "faq_sedes",
+      "keywords": [
+        "donde estan ubicados",
+        "donde quedan las sedes",
+        "sedes presenciales",
+        "donde estan las sedes",
+        "donde quedan",
+        "where are you located",
+        "where are your campuses located",
+        "where are your campuses",
+        "campus locations"
+      ],
+      "answer_es": "Gastroteacher cuenta con sedes presenciales en:\n- **Bogotá**: Chapinero Alto (Calle 67 # 4A - 28), cerca a la zona gastronómica.\n- **Medellín**: El Poblado / Manila (Carrera 43E # 11A - 14).\n\nTambién contamos con nuestro **Campus Virtual 100% Online en vivo** para estudiantes de cualquier ciudad o país.",
+      "answer_en": "Gastroteacher has physical campuses in:\n- **Bogota**: Chapinero Alto (Calle 67 # 4A - 28).\n- **Medellin**: El Poblado / Manila (Carrera 43E # 11A - 14).\n\nWe also offer our **100% Live Online Virtual Campus** available worldwide."
+    },
+    {
+      "id": "faq_metodos_pago",
+      "keywords": [
+        "metodos de pago",
+        "formas de pago",
+        "como puedo pagar",
+        "que medios de pago aceptan",
+        "payment methods",
+        "how can i pay"
+      ],
+      "answer_es": "Aceptamos múltiples medios de pago:\n1. **PSE / Transferencia Bancaria**: Tarjetas débito de cualquier banco en Colombia.\n2. **Tarjetas de Crédito**: Visa, Mastercard, American Express (hasta en 36 cuotas).\n3. **Financiación Directa a 0% de interés**: Paga el 50% de cuota inicial y el saldo en 2 cuotas mensuales sin intermediarios bancarios.\n4. **Convenios Empresariales / Descuentos**: 15% para estudiantes o egresados del SENA y escuelas de gastronomía aliadas.",
+      "answer_en": "We accept several payment methods:\n1. **PSE / Bank Transfer**: Debit from all Colombian banks.\n2. **Credit Cards**: Visa, Mastercard, American Express.\n3. **Direct 0% Interest Financing**: Pay 50% upfront and the remainder in 2 monthly installments.\n4. **Alliances & Discounts**: 15% off for SENA students and partner culinary schools."
+    },
+    {
+      "id": "faq_test_nivelacion",
+      "keywords": [
+        "test de nivelacion",
+        "examen de nivelacion",
+        "como se mi nivel",
+        "prueba de nivel",
+        "placement test",
+        "level test"
+      ],
+      "answer_es": "El **Test de Nivelación de Gastroteacher** es 100% gratuito y online:\n- Duración: 20 a 25 minutos.\n- Evalúa gramática, comprensión auditiva y vocabulario general y gastronómico.\n- Te entrega resultados inmediatos bajo el Marco Común Europeo (MCER A1 a C1).\n\nPuedes solicitar el enlace para realizar tu test a través de nuestro sitio web o contactando a nuestros asesores.",
+      "answer_en": "The **Gastroteacher Placement Test** is 100% free and online:\n- Duration: 20-25 minutes.\n- Evaluates grammar, listening, and culinary/general vocabulary.\n- Delivers instant results aligned with the CEFR (A1 to C1).\n\nYou can take the test directly on our portal or ask an admissions advisor for the link."
+    }
+  ]
+}
