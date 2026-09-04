@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import Swal from 'sweetalert2'
 import { loginUser, registerUser } from '../services/api'
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean
   isDark: boolean
 }>()
@@ -14,55 +14,53 @@ const emit = defineEmits<{
 }>()
 
 const activeTab = ref<'login' | 'register'>('login')
-const isLoading = ref(false)
+const isSubmitting = ref(false)
 const errorMessage = ref<string | null>(null)
 
-// Login form state
-const loginId = ref('admin')
-const loginPassword = ref('admin123')
+// Login form
+const loginId = ref('')
+const loginPassword = ref('')
 
-// Register form state
-const regFullName = ref('')
+// Register form
 const regUsername = ref('')
+const regFullName = ref('')
 const regEmail = ref('')
 const regPassword = ref('')
 
 async function handleLogin() {
+  errorMessage.value = null
   if (!loginId.value.trim() || !loginPassword.value) {
-    errorMessage.value = 'Por favor ingresa tu usuario/correo y contraseña.'
+    errorMessage.value = 'Por favor completa todos los campos requeridos.'
     return
   }
 
-  isLoading.value = true
-  errorMessage.value = null
-
+  isSubmitting.value = true
   try {
-    const res = await loginUser(loginId.value.trim(), loginPassword.value)
+    const data = await loginUser(loginId.value.trim(), loginPassword.value)
+    emit('authenticated', data.user)
     Swal.fire({
       toast: true,
       position: 'top-end',
       icon: 'success',
-      title: '¡Sesión Iniciada!',
-      text: `Bienvenido(a), ${res.user.full_name || res.user.username}`,
+      title: 'Acceso Concedido',
+      text: `Bienvenido, ${data.user.full_name || data.user.username}.`,
       showConfirmButton: false,
       timer: 3000,
-      timerProgressBar: true,
-      background: props.isDark ? '#1c1917' : '#ffffff',
-      color: props.isDark ? '#f5f5f4' : '#1c1917',
+      background: '#1c1917',
+      color: '#f5f5f4',
       iconColor: '#10b981'
     })
-    emit('authenticated', res.user)
-    emit('close')
   } catch (err: any) {
-    errorMessage.value = err.message || 'Error al iniciar sesión.'
+    errorMessage.value = err.message || 'Credenciales incorrectas o error en el servidor.'
   } finally {
-    isLoading.value = false
+    isSubmitting.value = false
   }
 }
 
 async function handleRegister() {
-  if (!regFullName.value.trim() || !regUsername.value.trim() || !regEmail.value.trim() || !regPassword.value) {
-    errorMessage.value = 'Por favor completa todos los campos del formulario.'
+  errorMessage.value = null
+  if (!regUsername.value.trim() || !regFullName.value.trim() || !regEmail.value.trim() || !regPassword.value) {
+    errorMessage.value = 'Por favor completa todos los campos de registro.'
     return
   }
 
@@ -71,36 +69,31 @@ async function handleRegister() {
     return
   }
 
-  isLoading.value = true
-  errorMessage.value = null
-
+  isSubmitting.value = true
   try {
-    const res = await registerUser({
-      full_name: regFullName.value.trim(),
+    const data = await registerUser({
       username: regUsername.value.trim(),
+      full_name: regFullName.value.trim(),
       email: regEmail.value.trim(),
       password: regPassword.value
     })
-
+    emit('authenticated', data.user)
     Swal.fire({
       toast: true,
       position: 'top-end',
       icon: 'success',
-      title: '¡Cuenta Creada!',
-      text: `Usuario ${res.user.username} registrado con éxito.`,
+      title: 'Registro Exitoso',
+      text: `Cuenta creada correctamente para ${data.user.username}.`,
       showConfirmButton: false,
-      timer: 3500,
-      timerProgressBar: true,
-      background: props.isDark ? '#1c1917' : '#ffffff',
-      color: props.isDark ? '#f5f5f4' : '#1c1917',
+      timer: 3000,
+      background: '#1c1917',
+      color: '#f5f5f4',
       iconColor: '#10b981'
     })
-    emit('authenticated', res.user)
-    emit('close')
   } catch (err: any) {
-    errorMessage.value = err.message || 'Error al registrar la cuenta.'
+    errorMessage.value = err.message || 'No se pudo completar el registro. Verifica los datos.'
   } finally {
-    isLoading.value = false
+    isSubmitting.value = false
   }
 }
 </script>
@@ -108,30 +101,32 @@ async function handleRegister() {
 <template>
   <div
     v-if="isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity duration-300"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-xs transition-opacity"
     @click.self="emit('close')"
   >
     <div
-      class="w-full max-w-md rounded-3xl shadow-2xl border overflow-hidden flex flex-col transition-all transform scale-100"
-      :class="isDark ? 'bg-stone-900 border-stone-800 text-stone-100' : 'bg-white border-stone-300 text-stone-950'"
+      class="w-full max-w-md border-2 transition-all duration-200 relative overflow-hidden"
+      :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 shadow-[8px_8px_0px_0px_#d97706]' : 'bg-white border-stone-900 text-stone-950 shadow-[8px_8px_0px_0px_#1c1917]'"
     >
-      <!-- Header -->
+      <!-- Corner Marks -->
+      <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-amber-600 pointer-events-none"></div>
+      <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-amber-600 pointer-events-none"></div>
+
+      <!-- Modal Header -->
       <div
-        class="px-6 py-5 border-b flex items-center justify-between"
-        :class="isDark ? 'border-stone-800 bg-stone-900/90' : 'border-stone-200 bg-stone-50'"
+        class="flex items-center justify-between p-4 border-b-2"
+        :class="isDark ? 'border-stone-800 bg-stone-900' : 'border-stone-900 bg-stone-100'"
       >
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 border-2 border-stone-900 dark:border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center justify-center font-mono font-black text-xs">
+            SEC
           </div>
           <div>
-            <h2 class="text-base font-black tracking-tight text-stone-950 dark:text-stone-100">
-              Acceso a Métricas y Analítica
-            </h2>
-            <p class="text-xs text-stone-600 dark:text-stone-400 font-medium">
-              Inicia sesión o regístrate para visualizar el dashboard
+            <h3 class="font-black text-sm uppercase tracking-tight font-mono text-stone-950 dark:text-stone-100">
+              // CONTROL DE ACCESO
+            </h3>
+            <p class="font-mono text-[10px] text-stone-600 dark:text-stone-400">
+              Identificación para panel analítico
             </p>
           </div>
         </div>
@@ -139,10 +134,9 @@ async function handleRegister() {
         <button
           type="button"
           @click="emit('close')"
-          class="p-2 rounded-xl border transition-colors cursor-pointer hover:bg-stone-200 dark:hover:bg-stone-800"
-          :class="isDark ? 'border-stone-700 text-stone-400' : 'border-stone-300 text-stone-700'"
+          class="p-1.5 border-2 border-stone-900 dark:border-stone-700 text-stone-700 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-200 transition-colors cursor-pointer"
         >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="18" x2="18" y2="18"/>
           </svg>
@@ -150,187 +144,146 @@ async function handleRegister() {
       </div>
 
       <!-- Tab Switcher -->
-      <div class="flex border-b" :class="isDark ? 'border-stone-800 bg-stone-950/40' : 'border-stone-200 bg-stone-100/50'">
+      <div class="flex border-b-2" :class="isDark ? 'border-stone-800 bg-stone-900' : 'border-stone-900 bg-stone-50'">
         <button
           type="button"
           @click="activeTab = 'login'; errorMessage = null"
-          class="flex-1 py-3 text-xs font-black transition-all border-b-2 cursor-pointer flex items-center justify-center gap-2"
+          class="flex-1 py-2.5 text-xs font-mono font-black uppercase transition-all border-b-2 cursor-pointer flex items-center justify-center gap-1.5"
           :class="activeTab === 'login'
-            ? 'border-amber-600 text-amber-700 dark:text-amber-400 bg-amber-500/5'
-            : 'border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'"
+            ? 'border-amber-600 text-amber-700 dark:text-amber-400 bg-amber-500/10'
+            : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'"
         >
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-            <polyline points="10 17 15 12 10 7"/>
-            <line x1="15" y1="12" x2="3" y2="12"/>
-          </svg>
-          <span>Iniciar Sesión</span>
+          <span>[01] INICIAR SESIÓN</span>
         </button>
 
         <button
           type="button"
           @click="activeTab = 'register'; errorMessage = null"
-          class="flex-1 py-3 text-xs font-black transition-all border-b-2 cursor-pointer flex items-center justify-center gap-2"
+          class="flex-1 py-2.5 text-xs font-mono font-black uppercase transition-all border-b-2 cursor-pointer flex items-center justify-center gap-1.5"
           :class="activeTab === 'register'
-            ? 'border-amber-600 text-amber-700 dark:text-amber-400 bg-amber-500/5'
-            : 'border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'"
+            ? 'border-amber-600 text-amber-700 dark:text-amber-400 bg-amber-500/10'
+            : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'"
         >
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="8.5" cy="7" r="4"/>
-            <line x1="20" y1="8" x2="20" y2="14"/>
-            <line x1="23" y1="11" x2="17" y2="11"/>
-          </svg>
-          <span>Registrarse</span>
+          <span>[02] REGISTRARSE</span>
         </button>
       </div>
 
       <!-- Content -->
-      <div class="p-6 space-y-4">
+      <div class="p-5 space-y-3.5">
         <!-- Error Message Alert -->
         <div
           v-if="errorMessage"
-          class="p-3 rounded-xl border flex items-center gap-2.5 bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs font-semibold"
+          class="p-2.5 border-2 border-rose-600 bg-rose-50 dark:bg-rose-950/40 text-rose-950 dark:text-rose-200 text-xs font-bold font-mono"
         >
-          <svg class="w-4 h-4 shrink-0 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span>{{ errorMessage }}</span>
+          <span>[ERR] {{ errorMessage }}</span>
         </div>
 
         <!-- 1. LOGIN FORM -->
-        <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-3.5">
+        <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-3">
           <div>
-            <label class="block text-xs font-black mb-1.5" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
-              Usuario o Correo Electrónico
+            <label class="block text-[11px] font-mono font-black uppercase mb-1" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
+              // Usuario o Correo
             </label>
             <input
               v-model="loginId"
               type="text"
               required
-              placeholder="ej. admin o correo@ejemplo.com"
-              class="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium border transition-colors outline-hidden"
-              :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-white border-stone-300 text-stone-900 focus:border-amber-600'"
+              placeholder="admin o correo@ejemplo.com"
+              class="w-full px-3 py-2 text-xs font-mono border-2 transition-colors outline-hidden"
+              :class="isDark ? 'bg-stone-900 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-stone-50 border-stone-900 text-stone-950 focus:border-amber-600'"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-black mb-1.5" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
-              Contraseña
+            <label class="block text-[11px] font-mono font-black uppercase mb-1" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
+              // Contraseña
             </label>
             <input
               v-model="loginPassword"
               type="password"
               required
               placeholder="••••••••"
-              class="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium border transition-colors outline-hidden"
-              :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-white border-stone-300 text-stone-900 focus:border-amber-600'"
+              class="w-full px-3 py-2 text-xs font-mono border-2 transition-colors outline-hidden"
+              :class="isDark ? 'bg-stone-900 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-stone-50 border-stone-900 text-stone-950 focus:border-amber-600'"
             />
-          </div>
-
-          <!-- Quick Tip with Default Admin Credentials -->
-          <div
-            class="p-2.5 rounded-xl border flex items-center justify-between text-[11px] font-bold"
-            :class="isDark ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-950'"
-          >
-            <span>💡 Cuenta demo: <b>admin</b> / <b>admin123</b></span>
-            <button
-              type="button"
-              @click="loginId = 'admin'; loginPassword = 'admin123'"
-              class="text-[10px] underline cursor-pointer hover:opacity-80"
-            >
-              Autocompletar
-            </button>
           </div>
 
           <button
             type="submit"
-            :disabled="isLoading"
-            class="w-full py-3 rounded-xl text-xs font-black text-white bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-md shadow-amber-600/20 transition-all hover:scale-101 active:scale-99 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            :disabled="isSubmitting"
+            class="w-full mt-2 py-2.5 font-mono text-xs font-black uppercase tracking-wider border-2 border-stone-900 bg-amber-600 hover:bg-amber-500 text-white transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 disabled:opacity-50 cursor-pointer shadow-[3px_3px_0px_0px_#1c1917] dark:shadow-[3px_3px_0px_0px_#f59e0b]"
           >
-            <svg v-if="isLoading" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-              <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-            </svg>
-            <span>{{ isLoading ? 'Verificando...' : 'Ingresar al Dashboard' }}</span>
+            {{ isSubmitting ? 'VERIFICANDO...' : 'INGRESAR AL SISTEMA' }}
           </button>
         </form>
 
         <!-- 2. REGISTER FORM -->
-        <form v-else @submit.prevent="handleRegister" class="space-y-3">
+        <form v-else @submit.prevent="handleRegister" class="space-y-2.5">
           <div>
-            <label class="block text-xs font-black mb-1" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
-              Nombre Completo
-            </label>
-            <input
-              v-model="regFullName"
-              type="text"
-              required
-              placeholder="ej. Chef Carlos Martínez"
-              class="w-full px-3.5 py-2 rounded-xl text-xs font-medium border transition-colors outline-hidden"
-              :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-white border-stone-300 text-stone-900 focus:border-amber-600'"
-            />
-          </div>
-
-          <div>
-            <label class="block text-xs font-black mb-1" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
-              Nombre de Usuario
+            <label class="block text-[11px] font-mono font-black uppercase mb-0.5" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
+              // Nombre de Usuario
             </label>
             <input
               v-model="regUsername"
               type="text"
               required
-              placeholder="ej. chef_carlos"
-              class="w-full px-3.5 py-2 rounded-xl text-xs font-medium border transition-colors outline-hidden"
-              :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-white border-stone-300 text-stone-900 focus:border-amber-600'"
+              placeholder="ej. chef_diego"
+              class="w-full px-3 py-1.5 text-xs font-mono border-2 transition-colors outline-hidden"
+              :class="isDark ? 'bg-stone-900 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-stone-50 border-stone-900 text-stone-950 focus:border-amber-600'"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-black mb-1" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
-              Correo Electrónico
+            <label class="block text-[11px] font-mono font-black uppercase mb-0.5" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
+              // Nombre Completo
+            </label>
+            <input
+              v-model="regFullName"
+              type="text"
+              required
+              placeholder="ej. Diego Rodríguez"
+              class="w-full px-3 py-1.5 text-xs font-mono border-2 transition-colors outline-hidden"
+              :class="isDark ? 'bg-stone-900 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-stone-50 border-stone-900 text-stone-950 focus:border-amber-600'"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-mono font-black uppercase mb-0.5" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
+              // Correo Institucional
             </label>
             <input
               v-model="regEmail"
               type="email"
               required
-              placeholder="carlos@gastroteacher.com"
-              class="w-full px-3.5 py-2 rounded-xl text-xs font-medium border transition-colors outline-hidden"
-              :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-white border-stone-300 text-stone-900 focus:border-amber-600'"
+              placeholder="chef@gastroteacher.edu.co"
+              class="w-full px-3 py-1.5 text-xs font-mono border-2 transition-colors outline-hidden"
+              :class="isDark ? 'bg-stone-900 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-stone-50 border-stone-900 text-stone-950 focus:border-amber-600'"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-black mb-1" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
-              Contraseña (mínimo 6 caracteres)
+            <label class="block text-[11px] font-mono font-black uppercase mb-0.5" :class="isDark ? 'text-stone-300' : 'text-stone-800'">
+              // Contraseña
             </label>
             <input
               v-model="regPassword"
               type="password"
               required
-              minlength="6"
-              placeholder="••••••••"
-              class="w-full px-3.5 py-2 rounded-xl text-xs font-medium border transition-colors outline-hidden"
-              :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-white border-stone-300 text-stone-900 focus:border-amber-600'"
+              placeholder="Mínimo 6 caracteres"
+              class="w-full px-3 py-1.5 text-xs font-mono border-2 transition-colors outline-hidden"
+              :class="isDark ? 'bg-stone-900 border-stone-700 text-stone-100 focus:border-amber-500' : 'bg-stone-50 border-stone-900 text-stone-950 focus:border-amber-600'"
             />
           </div>
 
           <button
             type="submit"
-            :disabled="isLoading"
-            class="w-full py-3 mt-1 rounded-xl text-xs font-black text-white bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-md shadow-amber-600/20 transition-all hover:scale-101 active:scale-99 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            :disabled="isSubmitting"
+            class="w-full mt-2 py-2.5 font-mono text-xs font-black uppercase tracking-wider border-2 border-stone-900 bg-amber-600 hover:bg-amber-500 text-white transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 disabled:opacity-50 cursor-pointer shadow-[3px_3px_0px_0px_#1c1917] dark:shadow-[3px_3px_0px_0px_#f59e0b]"
           >
-            <svg v-if="isLoading" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-              <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-            </svg>
-            <span>{{ isLoading ? 'Creando cuenta...' : 'Crear Cuenta y Continuar' }}</span>
+            {{ isSubmitting ? 'REGISTRANDO...' : 'REGISTRAR USUARIO' }}
           </button>
         </form>
       </div>
     </div>
   </div>
 </template>
-

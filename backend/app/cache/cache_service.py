@@ -99,5 +99,6 @@ class ResponseCacheService:
             "enabled": self.enabled
         }
 
+
 # Global singleton instance
 response_cache = ResponseCacheService()

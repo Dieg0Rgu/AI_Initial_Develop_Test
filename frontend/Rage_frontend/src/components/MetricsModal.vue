@@ -110,27 +110,31 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-xs transition-opacity">
     <div
-      class="w-full max-w-2xl rounded-3xl p-6 sm:p-7 backdrop-blur-2xl border shadow-2xl transition-all duration-300 transform scale-100 relative overflow-hidden"
-      :class="isDark ? 'bg-stone-900/95 border-stone-800 text-stone-100' : 'bg-white border-stone-300 text-stone-950 shadow-2xl'"
+      class="w-full max-w-2xl border-2 p-6 sm:p-7 transition-all duration-200 relative overflow-hidden"
+      :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 shadow-[8px_8px_0px_0px_#d97706]' : 'bg-white border-stone-900 text-stone-950 shadow-[8px_8px_0px_0px_#1c1917]'"
     >
+      <!-- Corner Marks -->
+      <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-amber-600 pointer-events-none"></div>
+      <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-amber-600 pointer-events-none"></div>
+
       <!-- Modal Header -->
       <div
-        class="flex items-center justify-between gap-3 mb-6 pb-4 border-b"
-        :class="isDark ? 'border-stone-800' : 'border-stone-300'"
+        class="flex items-center justify-between gap-3 mb-5 pb-3 border-b-2"
+        :class="isDark ? 'border-stone-800' : 'border-stone-900'"
       >
         <div class="flex items-center gap-3">
-          <div class="p-2.5 rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="p-2 border-2 border-stone-900 dark:border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="18" y1="20" x2="18" y2="10"/>
               <line x1="12" y1="20" x2="12" y2="4"/>
               <line x1="6" y1="20" x2="6" y2="14"/>
             </svg>
           </div>
           <div>
-            <h3 class="font-black text-lg tracking-tight text-stone-950 dark:text-stone-100">{{ labels.metricsTitle }}</h3>
-            <p class="text-xs text-stone-900 font-medium dark:text-stone-400">
+            <h3 class="font-black text-base tracking-tight uppercase text-stone-950 dark:text-stone-100 font-mono">// {{ labels.metricsTitle.toUpperCase() }}</h3>
+            <p class="font-mono text-[11px] text-stone-600 dark:text-stone-400">
               {{ labels.metricsSubtitle }}
             </p>
           </div>
@@ -139,14 +143,14 @@ onMounted(() => {
         <div class="flex items-center gap-2">
           <div
             v-if="currentUser"
-            class="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-xl border text-[11px] font-bold"
-            :class="isDark ? 'bg-stone-800/80 border-stone-700 text-stone-300' : 'bg-stone-100 border-stone-300 text-stone-800'"
+            class="hidden sm:flex items-center gap-2 px-2.5 py-1 border border-stone-900 dark:border-stone-700 font-mono text-[11px] font-black"
+            :class="isDark ? 'bg-stone-900 text-stone-300' : 'bg-stone-100 text-stone-900'"
           >
-            <span>👤 {{ currentUser.full_name || currentUser.username }}</span>
+            <span>[USR] {{ currentUser.full_name || currentUser.username }}</span>
             <button
               type="button"
               @click="emit('logout')"
-              class="text-[10px] font-black text-rose-600 dark:text-rose-400 hover:underline cursor-pointer ml-1"
+              class="text-[10px] font-black text-rose-600 dark:text-rose-400 hover:underline cursor-pointer ml-1 uppercase"
               title="Cerrar sesión"
             >
               Salir
@@ -156,9 +160,9 @@ onMounted(() => {
           <button
             type="button"
             @click="emit('close')"
-            class="p-2 rounded-xl text-stone-600 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-200 transition-colors cursor-pointer"
+            class="p-1.5 border-2 border-stone-900 dark:border-stone-700 text-stone-600 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-200 transition-colors cursor-pointer"
           >
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="18" x2="18" y2="18"/>
             </svg>
@@ -167,127 +171,117 @@ onMounted(() => {
       </div>
 
       <!-- Loading State -->
-      <div v-if="loading" class="py-12 text-center text-sm text-stone-900 font-bold">
-        <div class="animate-spin w-8 h-8 mx-auto mb-2 border-2 border-amber-600 border-t-transparent rounded-full"></div>
+      <div v-if="loading" class="py-12 text-center text-sm font-mono font-black text-stone-900 dark:text-stone-300">
+        <div class="animate-spin w-8 h-8 mx-auto mb-2 border-2 border-amber-600 border-t-transparent"></div>
         {{ labels.loadingMetrics }}
       </div>
 
       <!-- Metrics Grid -->
-      <div v-else-if="metrics" class="space-y-4">
+      <div v-else-if="metrics" class="space-y-3 font-mono">
         <!-- Top Stats Row -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <!-- Total Queries -->
-          <div class="p-4 rounded-2xl border backdrop-blur-md"
-            :class="isDark ? 'bg-stone-950/50 border-stone-800' : 'bg-stone-50 border-stone-300'"
+          <div
+            class="p-3 border-2 border-stone-900 dark:border-stone-700 relative shadow-[2px_2px_0px_0px_#1c1917] dark:shadow-[2px_2px_0px_0px_#000]"
+            :class="isDark ? 'bg-stone-900' : 'bg-stone-50'"
           >
-            <span class="text-xs font-bold text-stone-950 dark:text-stone-300 block mb-1">{{ labels.totalQueries }}</span>
-            <span class="text-2xl font-black text-amber-700 dark:text-amber-400">{{ metrics.total_queries }}</span>
+            <div class="text-[10px] uppercase font-black tracking-wider text-stone-500 dark:text-stone-400">// CONSULTAS</div>
+            <div class="text-xl font-black text-stone-950 dark:text-stone-100 mt-0.5">{{ metrics.total_queries }}</div>
+            <div class="text-[10px] text-stone-500 mt-1 font-bold">{{ labels.totalQueries }}</div>
           </div>
 
-          <!-- AI Resolved -->
-          <div class="p-4 rounded-2xl border backdrop-blur-md"
-            :class="isDark ? 'bg-stone-950/50 border-stone-800' : 'bg-stone-50 border-stone-300'"
+          <!-- Resolved by AI -->
+          <div
+            class="p-3 border-2 border-stone-900 dark:border-stone-700 relative shadow-[2px_2px_0px_0px_#059669]"
+            :class="isDark ? 'bg-stone-900' : 'bg-stone-50'"
           >
-            <span class="text-xs font-bold text-stone-950 dark:text-stone-300 block mb-1">{{ labels.resolvedByAI }}</span>
-            <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400">{{ metrics.resolved_by_ai_queries }}</span>
+            <div class="text-[10px] uppercase font-black tracking-wider text-emerald-700 dark:text-emerald-400">// RESUELTAS IA</div>
+            <div class="text-xl font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{{ metrics.resolved_by_ai_queries }}</div>
+            <div class="text-[10px] text-stone-500 mt-1 font-bold">{{ labels.resolvedByAI }}</div>
           </div>
 
-          <!-- Escalation Rate -->
-          <div class="p-4 rounded-2xl border backdrop-blur-md"
-            :class="isDark ? 'bg-stone-950/50 border-stone-800' : 'bg-stone-50 border-stone-300'"
+          <!-- Human Escalations -->
+          <div
+            class="p-3 border-2 border-stone-900 dark:border-stone-700 relative shadow-[2px_2px_0px_0px_#e11d48]"
+            :class="isDark ? 'bg-stone-900' : 'bg-stone-50'"
           >
-            <span class="text-xs font-bold text-stone-950 dark:text-stone-300 block mb-1">{{ labels.humanEscalation }}</span>
-            <div class="flex items-baseline gap-1">
-              <span class="text-2xl font-black text-rose-700 dark:text-rose-400">{{ metrics.escalated_queries }}</span>
-              <span class="text-xs font-bold text-stone-900 dark:text-stone-400">({{ metrics.escalation_rate_pct }}%)</span>
-            </div>
+            <div class="text-[10px] uppercase font-black tracking-wider text-rose-700 dark:text-rose-400">// ESCALAMIENTOS</div>
+            <div class="text-xl font-black text-rose-700 dark:text-rose-400 mt-0.5">{{ metrics.escalated_queries }}</div>
+            <div class="text-[10px] text-stone-500 mt-1 font-bold">{{ labels.humanEscalation }}</div>
           </div>
 
           <!-- Cache Hits -->
-          <div class="p-4 rounded-2xl border backdrop-blur-md"
-            :class="isDark ? 'bg-stone-950/50 border-stone-800' : 'bg-stone-50 border-stone-300'"
+          <div
+            class="p-3 border-2 border-stone-900 dark:border-stone-700 relative shadow-[2px_2px_0px_0px_#d97706]"
+            :class="isDark ? 'bg-stone-900' : 'bg-stone-50'"
           >
-            <span class="text-xs font-bold text-stone-950 dark:text-stone-300 block mb-1">{{ labels.cacheHits }}</span>
-            <div class="flex items-baseline gap-1">
-              <span class="text-2xl font-black text-amber-700 dark:text-amber-400">{{ metrics.performance.cache.hits }}</span>
-              <span class="text-xs font-bold text-stone-900 dark:text-stone-400">({{ metrics.performance.cache.hit_rate_pct }}%)</span>
-            </div>
+            <div class="text-[10px] uppercase font-black tracking-wider text-amber-700 dark:text-amber-400">// CACHÉ HITS</div>
+            <div class="text-xl font-black text-amber-700 dark:text-amber-400 mt-0.5">{{ metrics.performance?.cache?.hits || 0 }}</div>
+            <div class="text-[10px] text-stone-500 mt-1 font-bold">{{ labels.cacheHits }}</div>
           </div>
         </div>
 
-        <!-- Token & Cost Section -->
-        <div class="p-4 sm:p-5 rounded-2xl border backdrop-blur-md"
-          :class="isDark ? 'bg-stone-950/50 border-stone-800' : 'bg-stone-50 border-stone-300'"
+        <!-- Token Usage & Economics Section -->
+        <div
+          class="p-4 border-2 border-stone-900 dark:border-stone-700 space-y-3 shadow-[3px_3px_0px_0px_#1c1917] dark:shadow-[3px_3px_0px_0px_#000]"
+          :class="isDark ? 'bg-stone-900/60' : 'bg-stone-50'"
         >
-          <h4 class="text-xs font-black uppercase tracking-wider text-stone-950 dark:text-stone-300 mb-3">
-            {{ labels.tokenSectionTitle }}
-          </h4>
+          <div class="flex items-center justify-between border-b border-stone-300 dark:border-stone-800 pb-2">
+            <span class="text-xs font-black uppercase text-amber-700 dark:text-amber-400">// {{ labels.tokenSectionTitle.toUpperCase() }}</span>
+            <span class="text-[10px] text-stone-500 uppercase">[ECONOMICS]</span>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div>
-              <span class="text-stone-900 font-bold block">{{ labels.totalTokens }}</span>
-              <span class="font-black text-black dark:text-stone-100 text-sm">
-                {{ metrics.tokens.total_tokens.toLocaleString() }}
-              </span>
+            <div class="p-2 border border-stone-300 dark:border-stone-800 bg-white dark:bg-stone-900">
+              <span class="text-[10px] text-stone-500 block uppercase">{{ labels.totalTokens }}</span>
+              <span class="text-sm font-black text-stone-950 dark:text-stone-100">{{ metrics.tokens?.total_tokens || 0 }}</span>
             </div>
-            <div>
-              <span class="text-stone-900 font-bold block">{{ labels.savedTokens }}</span>
-              <span class="font-black text-emerald-700 dark:text-emerald-400 text-sm">
-                {{ metrics.tokens.tokens_saved_by_cache.toLocaleString() }}
-              </span>
+            <div class="p-2 border border-stone-300 dark:border-stone-800 bg-white dark:bg-stone-900">
+              <span class="text-[10px] text-emerald-700 dark:text-emerald-400 block uppercase">{{ labels.savedTokens }}</span>
+              <span class="text-sm font-black text-emerald-700 dark:text-emerald-400">{{ metrics.tokens?.tokens_saved_by_cache || 0 }}</span>
             </div>
-            <div>
-              <span class="text-stone-900 font-bold block">{{ labels.localCost }}</span>
-              <span class="font-black text-black dark:text-stone-100 text-sm">
-                {{ labels.freeLocal }}
-              </span>
+            <div class="p-2 border border-stone-300 dark:border-stone-800 bg-white dark:bg-stone-900">
+              <span class="text-[10px] text-amber-700 dark:text-amber-400 block uppercase">{{ labels.localCost }}</span>
+              <span class="text-sm font-black text-amber-700 dark:text-amber-400">{{ labels.freeLocal }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Performance / Latency Section -->
-        <div class="p-4 rounded-2xl border backdrop-blur-md flex items-center justify-between text-xs"
-          :class="isDark ? 'bg-stone-950/50 border-stone-800' : 'bg-stone-50 border-stone-300'"
-        >
-          <div>
-            <span class="text-stone-900 font-bold block">{{ labels.avgLatency }}</span>
-            <span class="font-black text-sm text-black dark:text-stone-100">{{ metrics.performance.avg_latency_ms }} ms</span>
+        <!-- Performance / Latency / System Info -->
+        <div class="grid grid-cols-3 gap-3 text-[11px]">
+          <div class="p-2.5 border-2 border-stone-900 dark:border-stone-800 bg-white dark:bg-stone-900">
+            <span class="text-[9px] text-stone-500 uppercase block">// {{ labels.avgLatency }}</span>
+            <span class="font-black text-stone-950 dark:text-stone-100">{{ (metrics.performance?.avg_latency_ms || 0).toFixed(0) }}ms</span>
           </div>
-          <div>
-            <span class="text-stone-900 font-bold block">{{ labels.cacheSize }}</span>
-            <span class="font-black text-sm text-black dark:text-stone-100">{{ metrics.performance.cache.cache_size }} / {{ metrics.performance.cache.max_size }}</span>
+          <div class="p-2.5 border-2 border-stone-900 dark:border-stone-800 bg-white dark:bg-stone-900">
+            <span class="text-[9px] text-stone-500 uppercase block">// {{ labels.cacheSize }}</span>
+            <span class="font-black text-stone-950 dark:text-stone-100">{{ metrics.performance?.cache?.cache_size || 0 }} items</span>
           </div>
-          <div>
-            <span class="text-stone-900 font-bold block">{{ labels.uptime }}</span>
-            <span class="font-black text-sm text-black dark:text-stone-100">{{ Math.floor(metrics.performance.uptime_seconds / 60) }} min</span>
+          <div class="p-2.5 border-2 border-stone-900 dark:border-stone-800 bg-white dark:bg-stone-900">
+            <span class="text-[9px] text-stone-500 uppercase block">// {{ labels.uptime }}</span>
+            <span class="font-black text-stone-950 dark:text-stone-100">{{ (metrics.performance?.uptime_seconds || 0).toFixed(0) }}s</span>
           </div>
         </div>
-      </div>
 
-      <!-- Modal Footer Actions -->
-      <div
-        class="mt-6 pt-4 border-t flex items-center justify-between gap-3"
-        :class="isDark ? 'border-stone-800' : 'border-stone-300'"
-      >
-        <button
-          type="button"
-          @click="promptReset"
-          :disabled="resetting"
-          class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-100 dark:hover:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 transition-all hover:scale-102 active:scale-98 cursor-pointer"
-        >
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 6h18"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-          <span>{{ resetting ? labels.resettingBtn : labels.resetMetricsBtn }}</span>
-        </button>
+        <!-- Actions Bar -->
+        <div class="pt-3 border-t-2 border-stone-200 dark:border-stone-800 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            @click="promptReset"
+            :disabled="resetting"
+            class="px-3.5 py-2 border-2 border-rose-600 bg-rose-50 text-rose-950 dark:bg-rose-950/40 dark:text-rose-200 text-xs font-black uppercase transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 disabled:opacity-50 cursor-pointer shadow-[2px_2px_0px_0px_#be123c]"
+          >
+            {{ resetting ? labels.resettingBtn : labels.resetMetricsBtn }}
+          </button>
 
-        <button
-          type="button"
-          @click="emit('close')"
-          class="px-5 py-2 rounded-xl text-xs font-bold bg-stone-950 hover:bg-stone-800 text-white dark:bg-amber-600 dark:hover:bg-amber-500 transition-colors shadow-sm cursor-pointer"
-        >
-          {{ labels.closeBtn }}
-        </button>
+          <button
+            type="button"
+            @click="emit('close')"
+            class="px-4 py-2 border-2 border-stone-900 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs font-black uppercase text-stone-950 dark:text-stone-200 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 cursor-pointer shadow-[2px_2px_0px_0px_#1c1917] dark:shadow-[2px_2px_0px_0px_#d97706]"
+          >
+            {{ labels.closeBtn }}
+          </button>
+        </div>
       </div>
     </div>
   </div>

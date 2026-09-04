@@ -41,6 +41,7 @@ const inputMessage = ref('')
 const isLoading = ref(false)
 const bypassCache = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
+const currentSessionId = ref('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7))
 
 // Current locale dictionary
 const t = computed(() => translations[currentLang.value])
@@ -120,7 +121,7 @@ async function handleSendMessage(customText?: string) {
   scrollToBottom()
 
   try {
-    const result = await sendChatMessage(text, 'web_session', bypassCache.value, currentLang.value)
+    const result = await sendChatMessage(text, currentSessionId.value, bypassCache.value, currentLang.value)
 
     const botMsg: ChatMessage = {
       id: `bot-${Date.now()}`,
@@ -171,6 +172,7 @@ async function clearChat() {
   })
 
   if (result.isConfirmed) {
+    currentSessionId.value = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)
     messages.value = [
       {
         id: `welcome-reset-${Date.now()}`,
@@ -218,7 +220,7 @@ async function handleDirectExportPdf() {
   isExportingDirectPdf.value = true
   try {
     const filename = `gastroteacher_chat_${Date.now()}.pdf`
-    const blob = await exportChatPdf(messages.value, 'web_session')
+    const blob = await exportChatPdf(messages.value, currentSessionId.value)
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -279,26 +281,26 @@ onMounted(async () => {
 
 <template>
   <div
-    class="min-h-screen flex flex-col font-sans transition-colors duration-300 antialiased relative"
+    class="min-h-screen flex flex-col font-sans transition-colors duration-200 antialiased relative selection:bg-amber-600 selection:text-white"
     :class="
       isDark
         ? 'bg-stone-950 text-stone-100'
-        : 'bg-stone-100/90 text-stone-950'
+        : 'bg-stone-100 text-stone-950'
     "
   >
-    <!-- Background Ambient Gradients -->
+    <!-- Background Constructivist Blueprint Grid & Angular Accents -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      <!-- Architectural Drafting Grid -->
       <div
-        class="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl opacity-30 transition-all duration-700"
-        :class="isDark ? 'bg-amber-600/30' : 'bg-amber-400/30'"
+        class="absolute inset-0 opacity-40 dark:opacity-25"
+        style="background-image: linear-gradient(to right, rgba(217, 119, 6, 0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(217, 119, 6, 0.12) 1px, transparent 1px); background-size: 32px 32px;"
+      ></div>
+      <!-- Asymmetric diagonal background color planes -->
+      <div
+        class="absolute -top-32 right-0 w-125 h-125 bg-amber-600/10 dark:bg-amber-500/10 rotate-12 -skew-x-12 blur-2xl pointer-events-none"
       ></div>
       <div
-        class="absolute top-1/3 -left-40 w-96 h-96 rounded-full blur-3xl opacity-20 transition-all duration-700"
-        :class="isDark ? 'bg-orange-700/20' : 'bg-orange-300/20'"
-      ></div>
-      <div
-        class="absolute -bottom-40 right-1/4 w-96 h-96 rounded-full blur-3xl opacity-25 transition-all duration-700"
-        :class="isDark ? 'bg-amber-900/30' : 'bg-stone-300/40'"
+        class="absolute bottom-0 -left-20 w-100 h-100 bg-orange-700/10 dark:bg-orange-600/10 -rotate-12 skew-y-6 blur-2xl pointer-events-none"
       ></div>
     </div>
 
@@ -334,24 +336,24 @@ onMounted(async () => {
 
     <!-- Main Container -->
     <main class="relative z-10 flex-1 max-w-5xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-4">
-      <!-- Chat Card Window -->
+      <!-- Constructivist Chat Card Window -->
       <div
-        class="flex-1 flex flex-col rounded-3xl backdrop-blur-2xl border shadow-xl transition-all duration-300 overflow-hidden min-h-145 max-h-[calc(100vh-140px)]"
+        class="flex-1 flex flex-col border-2 transition-all duration-200 overflow-hidden min-h-145 max-h-[calc(100vh-130px)] relative"
         :class="
           isDark
-            ? 'bg-stone-900/60 border-stone-800/80 shadow-black/40'
-            : 'bg-white/90 border-stone-300 shadow-stone-300/40'
+            ? 'bg-stone-900 border-stone-700 shadow-[6px_6px_0px_0px_#d97706]'
+            : 'bg-white border-stone-900 shadow-[6px_6px_0px_0px_#1c1917]'
         "
       >
-        <!-- Chat Top Action Bar -->
+        <!-- Constructivist Top Action Bar -->
         <div
-          class="px-4 sm:px-6 py-2.5 border-b flex items-center justify-between gap-3 text-xs font-bold shrink-0"
-          :class="isDark ? 'border-stone-800/80 bg-stone-900/50 text-stone-300' : 'border-stone-200 bg-stone-50/80 text-stone-700'"
+          class="px-4 sm:px-6 py-2.5 border-b-2 flex items-center justify-between gap-3 font-mono text-xs font-black shrink-0"
+          :class="isDark ? 'border-stone-700 bg-stone-950 text-stone-300' : 'border-stone-900 bg-stone-100 text-stone-900'"
         >
           <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span class="font-black text-stone-900 dark:text-stone-100">Asistente Virtual Oficial</span>
-            <span class="text-[11px] opacity-70">({{ messages.length }} mensajes)</span>
+            <span class="w-2 h-2 bg-emerald-500 animate-pulse"></span>
+            <span class="tracking-wider uppercase">// CANAL ACTIVO // REGISTRO OFICIAL</span>
+            <span class="text-[10px] px-1.5 py-0.2 bg-amber-600 text-white">[MSG: {{ messages.length }}]</span>
           </div>
 
           <div class="flex items-center gap-2">
@@ -360,22 +362,22 @@ onMounted(async () => {
               type="button"
               @click="handleDirectExportPdf"
               :disabled="isExportingDirectPdf || messages.length === 0"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all hover:scale-102 active:scale-98 disabled:opacity-50 cursor-pointer shadow-xs"
-              :class="isDark ? 'bg-stone-800 hover:bg-stone-700 border-stone-700 text-rose-300' : 'bg-white hover:bg-rose-50 border-stone-300 text-rose-700'"
+              class="flex items-center gap-1.5 px-3 py-1 font-mono text-xs font-black border-2 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 disabled:opacity-50 cursor-pointer shadow-[2px_2px_0px_0px_#e11d48]"
+              :class="isDark ? 'bg-stone-800 text-rose-300 border-rose-500' : 'bg-white text-rose-900 border-stone-900'"
               title="Descargar conversación actual en PDF con 1 clic"
             >
-              <svg v-if="!isExportingDirectPdf" class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg v-if="!isExportingDirectPdf" class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="12" y1="18" x2="12" y2="12"/>
                 <line x1="9" y1="15" x2="12" y2="18"/>
                 <line x1="15" y1="15" x2="12" y2="18"/>
               </svg>
-              <svg v-else class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg v-else class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
                 <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
               </svg>
-              <span>{{ isExportingDirectPdf ? 'Generando PDF...' : 'Descargar PDF' }}</span>
+              <span>{{ isExportingDirectPdf ? 'PROCESANDO...' : 'DESCARGAR PDF' }}</span>
             </button>
           </div>
         </div>
@@ -406,23 +408,21 @@ onMounted(async () => {
             @escalation-action="handleEscalationAction"
           />
 
-          <!-- Loading Indicator -->
-          <div v-if="isLoading" class="flex items-center gap-3 p-4 rounded-2xl w-fit backdrop-blur-md border animate-pulse"
-            :class="isDark ? 'bg-stone-900/80 border-stone-800 text-stone-300' : 'bg-white border-stone-300 text-stone-950 font-bold'"
-          >
+          <!-- Loading Indicator (Constructivist Square LED) -->
+          <div v-if="isLoading" class="flex items-center gap-3 p-3 border-2 border-amber-600 bg-amber-50 dark:bg-stone-900 text-stone-950 dark:text-amber-300 w-fit font-mono text-xs font-black shadow-[3px_3px_0px_0px_#d97706]">
             <div class="flex space-x-1.5">
-              <div class="w-2 h-2 rounded-full bg-amber-600 animate-bounce" style="animation-delay: 0ms"></div>
-              <div class="w-2 h-2 rounded-full bg-amber-600 animate-bounce" style="animation-delay: 150ms"></div>
-              <div class="w-2 h-2 rounded-full bg-amber-600 animate-bounce" style="animation-delay: 300ms"></div>
+              <div class="w-2 h-2 bg-amber-600 animate-pulse" style="animation-delay: 0ms"></div>
+              <div class="w-2 h-2 bg-amber-600 animate-pulse" style="animation-delay: 150ms"></div>
+              <div class="w-2 h-2 bg-amber-600 animate-pulse" style="animation-delay: 300ms"></div>
             </div>
-            <span class="text-xs font-bold">{{ t.loadingText }}</span>
+            <span>// PROCESANDO RESPUESTA...</span>
           </div>
         </div>
 
         <!-- Chat Bottom Control Area -->
         <div
-          class="p-3 sm:p-5 border-t backdrop-blur-xl transition-colors duration-300 space-y-3"
-          :class="isDark ? 'bg-stone-900/85 border-stone-800' : 'bg-stone-50 border-stone-300'"
+          class="p-3 sm:p-5 border-t-2 transition-colors duration-200 space-y-3"
+          :class="isDark ? 'bg-stone-950 border-stone-700' : 'bg-stone-100 border-stone-900'"
         >
           <!-- Quick Suggestions -->
           <QuickPrompts
@@ -440,11 +440,11 @@ onMounted(async () => {
                 type="text"
                 :placeholder="t.inputPlaceholder"
                 :disabled="isLoading"
-                class="w-full pl-4 pr-10 py-3 rounded-2xl text-sm transition-all duration-200 outline-hidden border shadow-inner font-medium"
+                class="w-full pl-4 pr-10 py-3 text-sm outline-hidden border-2 font-mono font-medium transition-colors"
                 :class="
                   isDark
-                    ? 'bg-stone-950/70 border-stone-800 text-stone-100 placeholder-stone-500 focus:border-amber-600 focus:ring-1 focus:ring-amber-600'
-                    : 'bg-white border-stone-400 text-stone-950 placeholder-stone-600 focus:border-amber-700 focus:ring-1 focus:ring-amber-700'
+                    ? 'bg-stone-900 border-stone-700 text-stone-100 placeholder-stone-500 focus:border-amber-500'
+                    : 'bg-white border-stone-900 text-stone-950 placeholder-stone-600 focus:border-amber-600'
                 "
               />
               <!-- Clear chat inside input -->
@@ -466,30 +466,30 @@ onMounted(async () => {
             <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
               <!-- Bypass cache toggle -->
               <label
-                class="flex items-center gap-1.5 text-[11px] font-bold text-stone-950 dark:text-stone-300 cursor-pointer select-none px-2.5 py-2 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-800/50 transition-colors"
+                class="flex items-center gap-1.5 font-mono text-[11px] font-black text-stone-900 dark:text-stone-300 cursor-pointer select-none px-2.5 py-2 border-2 border-stone-800 dark:border-stone-700 bg-white dark:bg-stone-900 transition-colors"
                 :title="t.noCacheTitle"
               >
                 <input
                   type="checkbox"
                   v-model="bypassCache"
-                  class="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5"
+                  class="accent-amber-600 w-3.5 h-3.5"
                 />
-                <span>{{ t.noCache }}</span>
+                <span>{{ t.noCache.toUpperCase() }}</span>
               </label>
 
               <!-- Send Button -->
               <button
                 type="submit"
                 :disabled="!inputMessage.trim() || isLoading"
-                class="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all duration-200 shadow-md hover:scale-102 active:scale-98 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+                class="flex items-center justify-center gap-2 px-5 py-3 font-mono text-xs font-black uppercase tracking-wider border-2 border-stone-900 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none cursor-pointer shadow-[3px_3px_0px_0px_#1c1917] dark:shadow-[3px_3px_0px_0px_#f59e0b]"
                 :class="
                   isDark
-                    ? 'bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-amber-900/20'
-                    : 'bg-linear-to-r from-amber-700 to-orange-700 hover:from-amber-800 hover:to-orange-800 text-white shadow-amber-900/20'
+                    ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                    : 'bg-amber-600 hover:bg-amber-700 text-white'
                 "
               >
                 <span>{{ t.sendBtn }}</span>
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <line x1="22" y1="2" x2="11" y2="13"/>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                 </svg>
@@ -552,7 +552,7 @@ onMounted(async () => {
       :is-open="showExportPdf"
       :is-dark="isDark"
       :messages="messages"
-      session-id="web_session"
+      :session-id="currentSessionId"
       :labels="{
         exportModalTitle: t.exportModalTitle,
         exportModalSubtitle: t.exportModalSubtitle,

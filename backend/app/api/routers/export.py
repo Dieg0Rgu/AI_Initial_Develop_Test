@@ -104,6 +104,7 @@ async def export_chat_md(request: ChatExportRequest):
     lines.append(f"- **WhatsApp / Línea Oficial**: [{settings.ESCALATION_WHATSAPP}](https://wa.me/{settings.ESCALATION_PHONE_RAW})")
     lines.append(f"- **Horario de Atención**: {settings.ESCALATION_HOURS}")
     lines.append(f"- **Sedes**: Bogotá D.C. & Medellín, Colombia\n")
+    lines.append("- **Sedes**: Bogotá D.C. & Medellín, Colombia\n")
 
     md_content = "\n".join(lines)
 

@@ -210,66 +210,64 @@ const handleDownloadDoc = async (filename: string) => {
 <template>
   <div
     v-if="isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity duration-300"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-xs transition-opacity duration-200"
     @click.self="emit('close')"
   >
     <div
-      class="w-full max-w-2xl rounded-3xl shadow-2xl border overflow-hidden flex flex-col max-h-[90vh] transition-all transform scale-100"
-      :class="isDark ? 'bg-stone-900 border-stone-800 text-stone-100' : 'bg-white border-stone-300 text-stone-950 shadow-2xl'"
+      class="w-full max-w-2xl border-2 overflow-hidden flex flex-col max-h-[90vh] transition-all transform scale-100 relative"
+      :class="isDark ? 'bg-stone-900 border-amber-600/60 text-stone-100 shadow-[8px_8px_0px_0px_#d97706]' : 'bg-stone-50 border-stone-900 text-stone-950 shadow-[8px_8px_0px_0px_#1c1917]'"
     >
+      <!-- Corner ticks -->
+      <span class="absolute top-1 left-1 font-mono text-[9px] text-stone-400 select-none pointer-events-none">+</span>
+      <span class="absolute top-1 right-1 font-mono text-[9px] text-stone-400 select-none pointer-events-none">+</span>
+      <span class="absolute bottom-1 left-1 font-mono text-[9px] text-stone-400 select-none pointer-events-none">+</span>
+      <span class="absolute bottom-1 right-1 font-mono text-[9px] text-stone-400 select-none pointer-events-none">+</span>
+
       <!-- Header -->
       <div
-        class="px-6 py-5 border-b flex items-center justify-between"
-        :class="isDark ? 'border-stone-800 bg-stone-900/90' : 'border-stone-200 bg-stone-50'"
+        class="px-6 py-4 border-b-2 flex items-center justify-between"
+        :class="isDark ? 'border-amber-600/40 bg-stone-900' : 'border-stone-900 bg-stone-100'"
       >
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
+          <div class="w-9 h-9 border-2 flex items-center justify-center font-mono font-black text-xs"
+               :class="isDark ? 'border-amber-500 bg-amber-500/10 text-amber-400' : 'border-stone-900 bg-amber-500 text-stone-950'">
+            EXP
           </div>
           <div>
-            <h2 class="text-base sm:text-lg font-black tracking-tight text-stone-950 dark:text-stone-100">
-              {{ labels.exportModalTitle }} (PDF / Markdown / TXT)
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-[10px] tracking-widest uppercase font-bold text-amber-700 dark:text-amber-400">
+                [DOC // DISPATCH]
+              </span>
+            </div>
+            <h2 class="text-sm sm:text-base font-black uppercase tracking-tight text-stone-950 dark:text-stone-100">
+              {{ labels.exportModalTitle }} (PDF / MD / TXT)
             </h2>
-            <p class="text-xs text-stone-900 font-medium dark:text-stone-300">
-              {{ labels.exportModalSubtitle }}
-            </p>
           </div>
         </div>
 
         <button
           type="button"
           @click="emit('close')"
-          class="p-2 rounded-xl border transition-colors cursor-pointer hover:bg-stone-200 dark:hover:bg-stone-800"
-          :class="isDark ? 'border-stone-700 text-stone-400' : 'border-stone-400 text-stone-900'"
+          class="w-8 h-8 border-2 flex items-center justify-center font-mono font-bold transition-all cursor-pointer"
+          :class="isDark ? 'border-stone-700 text-stone-300 hover:bg-stone-800 hover:border-stone-500' : 'border-stone-900 text-stone-900 hover:bg-stone-200'"
         >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+          ✕
         </button>
       </div>
 
       <!-- Content -->
-      <div class="p-6 overflow-y-auto space-y-6">
+      <div class="p-6 overflow-y-auto space-y-5">
         <!-- Success Alert -->
         <div
           v-if="alertSuccessMsg"
-          class="p-4 rounded-2xl border flex items-start gap-3 bg-emerald-500/10 border-emerald-500/40 text-emerald-950 dark:text-emerald-300 animate-fade-in font-medium"
+          class="p-3.5 border-2 flex items-start gap-3 bg-emerald-500/10 border-emerald-600 text-emerald-950 dark:text-emerald-300 font-mono text-xs shadow-[3px_3px_0px_0px_#059669]"
         >
-          <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 font-bold text-sm">
-            ✓
-          </div>
+          <span class="px-1.5 py-0.5 bg-emerald-600 text-white font-bold text-[10px] uppercase">OK</span>
           <div class="flex-1">
-            <h4 class="font-black text-sm text-emerald-950 dark:text-emerald-300">
-              {{ labels.exportSuccessAlertTitle }} (SweetAlert2)
+            <h4 class="font-black uppercase tracking-wide">
+              {{ labels.exportSuccessAlertTitle }}
             </h4>
-            <p class="text-xs mt-0.5 text-stone-950 dark:text-emerald-200 font-semibold">
+            <p class="text-[11px] mt-0.5 font-medium">
               {{ labels.exportSuccessAlertText }} (<b>{{ alertSuccessMsg }}</b>)
             </p>
           </div>
@@ -277,47 +275,43 @@ const handleDownloadDoc = async (filename: string) => {
 
         <!-- Section 1: Export Current Conversation -->
         <div
-          class="p-5 rounded-2xl border transition-all"
-          :class="isDark ? 'bg-stone-800/40 border-stone-700/60' : 'bg-stone-50 border-stone-300'"
+          class="p-4 border-2 transition-all"
+          :class="isDark ? 'bg-stone-900/60 border-stone-800 shadow-[4px_4px_0px_0px_#292524]' : 'bg-white border-stone-900 shadow-[4px_4px_0px_0px_#d97706]'"
         >
-          <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-3">
             <div>
               <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/40">
-                  SESIÓN ACTIVA
+                <span class="px-1.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider bg-amber-500 text-stone-950 border border-stone-900">
+                  SESIÓN VIVA
                 </span>
-                <h3 class="font-black text-sm text-stone-950 dark:text-stone-100">
+                <h3 class="font-black text-xs uppercase tracking-wide text-stone-950 dark:text-stone-100">
                   {{ labels.exportChatTitle }}
                 </h3>
               </div>
-              <p class="text-xs text-stone-950 font-medium dark:text-stone-300 mt-1">
-                {{ labels.exportChatDesc }} Selecciona el formato de descarga deseado:
+              <p class="text-xs text-stone-700 dark:text-stone-300 font-sans mt-1">
+                {{ labels.exportChatDesc }}
               </p>
-              <div class="flex items-center gap-3 mt-2 text-[11px] font-bold text-stone-900 dark:text-stone-300">
-                <span>💬 {{ messages.length }} mensajes en memoria</span>
+              <div class="flex items-center gap-3 mt-2 font-mono text-[11px] text-stone-600 dark:text-stone-400">
+                <span>// {{ messages.length }} MENSAJES REGISTRADOS</span>
                 <span>•</span>
-                <span>📋 Formatos: PDF, Markdown (.md), Texto (.txt)</span>
+                <span>PDF | MD | TXT</span>
               </div>
             </div>
 
             <!-- Export Buttons Row -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-stone-200 dark:border-stone-700">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t-2 border-stone-200 dark:border-stone-800">
               <!-- Export PDF Button -->
               <button
                 type="button"
                 @click="handleExportPdf"
                 :disabled="isExportingPdf || messages.length === 0"
-                class="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black bg-linear-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white shadow-md shadow-rose-600/20 transition-all hover:scale-102 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                class="flex items-center justify-center gap-2 px-3 py-2.5 border-2 text-xs font-mono font-bold uppercase transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="isDark 
+                  ? 'border-rose-500 bg-rose-600 text-white hover:bg-rose-500 shadow-[3px_3px_0px_0px_#e11d48]' 
+                  : 'border-stone-900 bg-rose-600 text-white hover:bg-rose-700 shadow-[3px_3px_0px_0px_#1c1917] active:shadow-[1px_1px_0px_0px_#1c1917]'"
               >
-                <svg v-if="!isExportingPdf" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                </svg>
-                <svg v-else class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-                </svg>
-                <span>{{ isExportingPdf ? 'Generando...' : 'Exportar PDF' }}</span>
+                <span v-if="!isExportingPdf">■ EXPORTAR PDF</span>
+                <span v-else class="animate-pulse">GENERANDO...</span>
               </button>
 
               <!-- Export Markdown Button -->
@@ -325,18 +319,13 @@ const handleDownloadDoc = async (filename: string) => {
                 type="button"
                 @click="handleExportMd"
                 :disabled="isExportingMd || messages.length === 0"
-                class="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-md shadow-amber-600/20 transition-all hover:scale-102 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                class="flex items-center justify-center gap-2 px-3 py-2.5 border-2 text-xs font-mono font-bold uppercase transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="isDark 
+                  ? 'border-amber-500 bg-amber-600 text-white hover:bg-amber-500 shadow-[3px_3px_0px_0px_#d97706]' 
+                  : 'border-stone-900 bg-amber-500 text-stone-950 hover:bg-amber-400 shadow-[3px_3px_0px_0px_#1c1917] active:shadow-[1px_1px_0px_0px_#1c1917]'"
               >
-                <svg v-if="!isExportingMd" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                  <polyline points="7 15 7 9 10 12 13 9 13 15"/>
-                  <polyline points="17 12 19 14 17 16"/>
-                </svg>
-                <svg v-else class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-                </svg>
-                <span>{{ isExportingMd ? 'Generando...' : 'Exportar Markdown (.md)' }}</span>
+                <span v-if="!isExportingMd">▲ EXPORTAR MD</span>
+                <span v-else class="animate-pulse">GENERANDO...</span>
               </button>
 
               <!-- Export TXT Button -->
@@ -344,19 +333,13 @@ const handleDownloadDoc = async (filename: string) => {
                 type="button"
                 @click="handleExportTxt"
                 :disabled="isExportingTxt || messages.length === 0"
-                class="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black bg-linear-to-r from-stone-700 to-stone-800 hover:from-stone-800 hover:to-stone-900 text-white shadow-md shadow-stone-700/20 transition-all hover:scale-102 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                class="flex items-center justify-center gap-2 px-3 py-2.5 border-2 text-xs font-mono font-bold uppercase transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="isDark 
+                  ? 'border-stone-600 bg-stone-800 text-stone-100 hover:bg-stone-700 shadow-[3px_3px_0px_0px_#57534e]' 
+                  : 'border-stone-900 bg-stone-900 text-white hover:bg-stone-800 shadow-[3px_3px_0px_0px_#d97706] active:shadow-[1px_1px_0px_0px_#d97706]'"
               >
-                <svg v-if="!isExportingTxt" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10 9 9 9 8 9"/>
-                </svg>
-                <svg v-else class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-                </svg>
-                <span>{{ isExportingTxt ? 'Generando...' : 'Exportar TXT' }}</span>
+                <span v-if="!isExportingTxt">● EXPORTAR TXT</span>
+                <span v-else class="animate-pulse">GENERANDO...</span>
               </button>
             </div>
           </div>
@@ -364,56 +347,52 @@ const handleDownloadDoc = async (filename: string) => {
 
         <!-- Section 2: Official Business Documents -->
         <div>
-          <div class="mb-3">
-            <h3 class="font-black text-sm flex items-center gap-2 text-stone-950 dark:text-stone-100">
-              <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-              </svg>
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="font-black text-xs uppercase tracking-wider font-mono flex items-center gap-2 text-stone-950 dark:text-stone-100">
+              <span class="w-2.5 h-2.5 bg-emerald-600 inline-block"></span>
               {{ labels.exportDocsTitle }}
             </h3>
-            <p class="text-xs text-stone-950 font-medium dark:text-stone-300">
-              {{ labels.exportDocsDesc }}
-            </p>
+            <span class="font-mono text-[10px] text-stone-500 dark:text-stone-400 uppercase">[CANONICAL DOCS]</span>
           </div>
 
-          <div class="grid grid-cols-1 gap-2.5">
+          <div class="grid grid-cols-1 gap-2">
             <div
               v-for="doc in officialDocs"
               :key="doc.id"
-              class="p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-colors"
-              :class="isDark ? 'bg-stone-800/20 border-stone-800 hover:bg-stone-800/40' : 'bg-stone-50 border-stone-300 hover:bg-stone-100'"
+              class="p-3 border-2 flex items-center justify-between gap-3 transition-all"
+              :class="isDark ? 'bg-stone-900 border-stone-800 hover:border-amber-500/50 shadow-[2px_2px_0px_0px_#292524]' : 'bg-white border-stone-900 hover:border-amber-600 shadow-[2px_2px_0px_0px_#e7e5e4]'"
             >
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-400 flex items-center justify-center font-bold text-[10px]">
-                  DOC
+                <div class="w-7 h-7 border-2 border-stone-900 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 flex items-center justify-center font-mono font-black text-[10px]">
+                  #
                 </div>
                 <div>
-                  <h4 class="font-bold text-xs text-stone-950 dark:text-stone-100">
+                  <h4 class="font-bold text-xs uppercase text-stone-950 dark:text-stone-100">
                     {{ doc.title }}
                   </h4>
-                  <p class="text-[10px] text-stone-700 dark:text-stone-400 font-mono font-medium">
-                    {{ doc.filename }} • ~{{ doc.size_kb }} KB
+                  <p class="text-[10px] text-stone-600 dark:text-stone-400 font-mono">
+                    {{ doc.filename }} // ~{{ doc.size_kb }} KB
                   </p>
                 </div>
               </div>
 
               <!-- Download options -->
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5">
                 <!-- PDF Download -->
                 <button
                   type="button"
                   @click="handleDownloadDoc(doc.filename)"
                   :disabled="downloadingDocId === doc.filename"
                   title="Descargar PDF"
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all hover:scale-102 active:scale-98 cursor-pointer"
+                  class="px-2.5 py-1 border-2 font-mono text-[11px] font-bold uppercase transition-all cursor-pointer"
                   :class="
                     isDark
-                      ? 'bg-stone-800 border-stone-700 text-stone-200 hover:bg-stone-700'
-                      : 'bg-white border-stone-400 text-stone-950 hover:bg-stone-100'
+                      ? 'border-stone-700 bg-stone-800 text-stone-200 hover:border-rose-500'
+                      : 'border-stone-900 bg-white text-stone-950 hover:bg-stone-100 shadow-[2px_2px_0px_0px_#1c1917]'
                   "
                 >
-                  <span class="text-[10px] font-black text-rose-600 dark:text-rose-400">PDF</span>
-                  <span>{{ downloadingDocId === doc.filename ? '...' : 'Descargar' }}</span>
+                  <span class="text-rose-600 dark:text-rose-400 font-black">PDF</span>
+                  <span class="ml-1">{{ downloadingDocId === doc.filename ? '...' : '↓' }}</span>
                 </button>
 
                 <!-- Markdown Download (if available) -->
@@ -423,15 +402,15 @@ const handleDownloadDoc = async (filename: string) => {
                   @click="handleDownloadDoc(doc.md_filename)"
                   :disabled="downloadingDocId === doc.md_filename"
                   title="Descargar Markdown (.md)"
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all hover:scale-102 active:scale-98 cursor-pointer"
+                  class="px-2.5 py-1 border-2 font-mono text-[11px] font-bold uppercase transition-all cursor-pointer"
                   :class="
                     isDark
-                      ? 'bg-stone-800 border-stone-700 text-stone-200 hover:bg-stone-700'
-                      : 'bg-white border-stone-400 text-stone-950 hover:bg-stone-100'
+                      ? 'border-stone-700 bg-stone-800 text-stone-200 hover:border-amber-500'
+                      : 'border-stone-900 bg-white text-stone-950 hover:bg-stone-100 shadow-[2px_2px_0px_0px_#1c1917]'
                   "
                 >
-                  <span class="text-[10px] font-black text-amber-600 dark:text-amber-400">MD</span>
-                  <span>{{ downloadingDocId === doc.md_filename ? '...' : 'Descargar' }}</span>
+                  <span class="text-amber-600 dark:text-amber-400 font-black">MD</span>
+                  <span class="ml-1">{{ downloadingDocId === doc.md_filename ? '...' : '↓' }}</span>
                 </button>
               </div>
             </div>
@@ -441,16 +420,16 @@ const handleDownloadDoc = async (filename: string) => {
 
       <!-- Footer -->
       <div
-        class="px-6 py-4 border-t flex justify-end"
-        :class="isDark ? 'border-stone-800 bg-stone-900/60' : 'border-stone-200 bg-stone-50'"
+        class="px-6 py-3 border-t-2 flex justify-end"
+        :class="isDark ? 'border-amber-600/40 bg-stone-900' : 'border-stone-900 bg-stone-100'"
       >
         <button
           type="button"
           @click="emit('close')"
-          class="px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer"
-          :class="isDark ? 'border-stone-700 bg-stone-800 text-stone-300 hover:bg-stone-700' : 'border-stone-400 bg-white text-stone-950 hover:bg-stone-100'"
+          class="px-4 py-1.5 border-2 font-mono text-xs font-black uppercase transition-all cursor-pointer"
+          :class="isDark ? 'border-stone-700 bg-stone-800 text-stone-300 hover:border-stone-500' : 'border-stone-900 bg-white text-stone-950 hover:bg-stone-100 shadow-[2px_2px_0px_0px_#1c1917]'"
         >
-          {{ labels.closeBtn }}
+          [CERRAR]
         </button>
       </div>
     </div>

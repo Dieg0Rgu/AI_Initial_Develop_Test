@@ -90,5 +90,6 @@ class MetricsTracker:
         self.latencies_ms = []
         response_cache.clear()
 
+
 # Global singleton tracker
 metrics_tracker = MetricsTracker()

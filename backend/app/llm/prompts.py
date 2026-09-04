@@ -60,7 +60,18 @@ Respuesta: ¡Hola! En Gastroteacher Academy contamos con total flexibilidad para
 1. **Traslado de Sede Presencial**: Puedes solicitar el traslado entre nuestras sedes de Bogotá y Medellín sin costo administrativo adicional ni pérdida de avance académico.
 2. **Paso a Modalidad Online en Vivo**: Puedes migrar a nuestro Campus Virtual 100% online en vivo conservando tus horas acumuladas y notas.
 3. **Congelamiento Preventivo**: Puedes congelar tu matrícula hasta por 90 días calendario mientras te instalas en tu nueva ciudad.
-Para coordinar tu traslado de sede o cohorte, notifícalo con al menos 3 días hábiles a soporte académico ({settings.ESCALATION_EMAIL} o WhatsApp {settings.ESCALATION_WHATSAPP}) con tu documento de identidad.
+--- REGLAS DE REDACCIÓN EDITORIAL Y FORMATO LIMPIO (OBLIGATORIAS) ---
+1. **Concisión ejecutiva y claridad**: Responde de manera directa, profesional y cálida en un máximo de 2 a 3 párrafos breves o viñetas limpias. Elimina rodeos, saludos redundantes o preámbulos vacíos (evita "Como modelo de IA...", "Espero te encuentres bien...", "A continuación te presento...").
+2. **Prohibición de divisores de markdown**: NUNCA generes líneas divisorias horizontales (`---`, `***` o `___`). Tampoco uses encabezados innecesarios con `#` o `##` para respuestas cortas.
+3. **Limpieza de saltos de línea**: No generes múltiples líneas en blanco consecutivas. Mantén los párrafos y listas cohesivos y compactos.
+4. **Cierre de oraciones**: Concluye SIEMPRE las oraciones con punto final. Nunca dejes oraciones a medias ni te comas palabras.
+5. **Precisión fáctica**: Sustenta tus respuestas estrictamente en el [CONTEXTO_DOCUMENTAL]. Si algo no está documentado, indica con amabilidad el canal oficial correspondiente sin inventar información.
+1. **Formato en texto puro y viñetas**: NUNCA generes tablas en formato markdown (prohibido usar caracteres barra vertical '|' o líneas con guiones '|---|'). Si vas a detallar modalidades, precios o comparaciones, usa párrafos fluidos o viñetas simples con guiones (-).
+2. **Prohibición de divisores y símbolos decorativos**: NUNCA generes líneas divisorias horizontales (`---`, `***` o `___`), ni caracteres '|', ni encabezados innecesarios con `#`. Mantén el texto limpio, natural y legible sin símbolos raros.
+3. **Concisión ejecutiva y claridad**: Responde de manera directa, profesional y cálida en un máximo de 2 a 3 párrafos breves o viñetas limpias. Elimina rodeos, preámbulos vacíos y saludos redundantes.
+4. **Limpieza de saltos de línea**: No generes múltiples líneas en blanco consecutivas. Mantén los párrafos y listas compactos.
+5. **Cierre de oraciones**: Concluye SIEMPRE las oraciones con punto final. Nunca dejes oraciones a medias ni te comas palabras.
+6. **Precisión fáctica**: Sustenta tus respuestas estrictamente en el [CONTEXTO_DOCUMENTAL]. Si algo no está documentado, indica con amabilidad el canal oficial correspondiente sin inventar información.
 """
 
 
@@ -79,7 +90,7 @@ def build_rag_prompt(query: str, context: str, language: str = 'es') -> List[Dic
 
 INSTRUCCIONES FINALES:
 {lang_instruction}
-Primero evalúa si <user_input> cae en el GRUPO A (Escalamiento). Si es así, responde con empatía personalizada, incluye [ESCALATE_HUMAN] y datos de contacto. Si es una consulta académica, cambio de ciudad o de matrícula sustentada en documentos, responde con las políticas oficiales de Gastroteacher."""
+Primero evalúa si <user_input> cae en el GRUPO A (Escalamiento). Si es así, responde con empatía personalizada, incluye [ESCALATE_HUMAN] y datos de contacto. Si es una consulta académica, cambio de ciudad o de matrícula sustentada en documentos, responde con las políticas oficiales de Gastroteacher de forma concisa y ejecutiva (máximo 2 a 3 párrafos o viñetas limpias). NUNCA uses tablas con barras ('|'), ni líneas divisorias ('---' o '***') ni saltos de línea repetidos. Concluye siempre todas tus oraciones con punto final sin recortar palabras."""
 
     return [
         {"role": "system", "content": SYSTEM_PROMPT},

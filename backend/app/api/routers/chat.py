@@ -10,6 +10,7 @@ try:
     from app.llm.client import (
         OllamaClient,
         LLMClient,
+        clean_markdown_response,
         normalize_simple,
         contains_profanity,
         is_gibberish,
@@ -32,6 +33,7 @@ except ImportError:
     from backend.app.llm.client import (
         OllamaClient,
         LLMClient,
+        clean_markdown_response,
         normalize_simple,
         contains_profanity,
         is_gibberish,
@@ -171,7 +173,7 @@ async def process_chat(request: ChatRequest):
     faq_result = faq_service.match_faq(query, session_id=request.session_id, language=lang)
     if faq_result is not None:
         faq_answer, faq_escalated = faq_result
-        cleaned_faq = faq_answer.replace("[ESCALATE_HUMAN]", "").strip()
+        cleaned_faq = clean_markdown_response(faq_answer.replace("[ESCALATE_HUMAN]", ""))
         total_latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
         p_tok = len(query) // 4
         c_tok = len(cleaned_faq) // 4
@@ -210,7 +212,7 @@ async def process_chat(request: ChatRequest):
                 latency_ms=latency_ms
             )
             return ChatResponse(
-                response=cached_result["response"],
+                response=clean_markdown_response(cached_result["response"]),
                 is_escalated=cached_result["is_escalated"],
                 cached=True,
                 sources=cached_result["sources"],
@@ -219,7 +221,6 @@ async def process_chat(request: ChatRequest):
                 session_id=request.session_id
             )
 
-    # 2. Retrieve relevant chunks from ChromaDB (Skip if greeting, nonsense, or Grupo A escalation)
         # 3. Check semantic cache if not bypassed
         semantic_hit = semantic_cache.get(query, language=lang)
         if semantic_hit is not None:
@@ -232,7 +233,7 @@ async def process_chat(request: ChatRequest):
                 latency_ms=latency_ms
             )
             return ChatResponse(
-                response=cached_result["response"],
+                response=clean_markdown_response(cached_result["response"]),
                 is_escalated=cached_result.get("is_escalated", False),
                 cached=True,
                 sources=cached_result.get("sources", []),
@@ -269,6 +270,7 @@ async def process_chat(request: ChatRequest):
         is_relevant=is_relevant,
         language=lang
     )
+    response_text = clean_markdown_response(response_text)
 
     total_latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
 

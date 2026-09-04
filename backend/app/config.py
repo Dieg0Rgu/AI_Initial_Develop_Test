@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "qwen2.5:7b"
     OLLAMA_EMBED_MODEL: str = "nomic-embed-text"
     LLM_TEMPERATURE: float = 0.2
-    MAX_TOKENS: int = 1024
+    MAX_TOKENS: int = 1536
 
     # ChromaDB & RAG Settings
     CHROMA_PERSIST_DIR: str = DEFAULT_CHROMA_PERSIST

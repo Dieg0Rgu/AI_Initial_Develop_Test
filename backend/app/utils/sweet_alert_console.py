@@ -7,8 +7,10 @@ from rich.text import Text
 from rich.align import Align
 from rich.table import Table
 from rich.box import ROUNDED, DOUBLE_EDGE, HEAVY
+from rich.box import ROUNDED
 
 console = Console()
+
 
 class SweetAlert:
     """

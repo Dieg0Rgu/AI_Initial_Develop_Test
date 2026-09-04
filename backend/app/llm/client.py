@@ -144,13 +144,12 @@ def classify_grupo_a_intent(text: str) -> Optional[str]:
     if any(ind in t_lower or ind in norm for ind in refund_indicators):
         return "REFUND"
 
-    # 2. Soporte Técnico / Plataforma / Errores 403 / Acceso / PSE
+    # 2. Soporte Técnico de Plataforma / Errores 403 / Acceso al Campus Virtual
     tech_indicators = [
         "error 403", "403", "acceso denegado", "campus virtual", "grabacion", "grabaciones",
         "login", "credenciales", "contrasena", "contraseña", "bloqueado", "no me deja entrar",
         "no puedo entrar", "falla tecnica", "falla de login", "problema con el campus",
-        "error de pse", "falla pse", "fallo el pago", "acceso a plataforma", "technical issue",
-        "access denied", "password reset"
+        "acceso a plataforma", "technical issue", "access denied", "password reset"
     ]
     if any(ind in t_lower or ind in norm for ind in tech_indicators):
         return "TECHNICAL"
@@ -245,6 +244,7 @@ def extract_name_intent(query: str) -> Optional[str]:
         clean_text = " ".join(clean_words)
         if (
             all(w.isalpha() for w in clean_words)
+            and any(w in COMMON_NAMES for w in clean_words)
             and clean_text not in GREETING_WORDS
             and clean_text not in NONSENSE_KEYWORDS
             and not any(w in clean_words for w in NONSENSE_KEYWORDS_EN)
@@ -265,8 +265,109 @@ def is_english_query(norm_q: str, words: list[str], language: Optional[str] = No
         return True
     if language == 'es':
         return False
-    en_signals = {"hello", "hi", "good", "morning", "afternoon", "evening", "what", "how", "when", "where", "much", "cost", "price", "prices", "schedules", "classes", "enrollment", "course", "courses", "apple", "burger", "dog", "cat", "car", "computer", "bro", "dude", "table", "chair", "shoes", "window", "door"}
+    en_signals = {
+        "hello", "hi", "good", "morning", "afternoon", "evening", "what", "how", "when",
+        "where", "much", "cost", "price", "prices", "schedules", "classes", "enrollment",
+        "course", "courses", "apple", "burger", "dog", "cat", "car", "computer", "bro",
+        "dude", "table", "chair", "shoes", "window", "door"
+    }
     return any(w in en_signals for w in words) or norm_q in GREETING_WORDS_EN or norm_q in NONSENSE_KEYWORDS_EN
+
+
+def clean_markdown_response(text: str) -> str:
+    """
+    Cleans up LLM/API responses:
+    - Removes reasoning tags (<think>...</think>).
+    - Converts markdown tables into clean, readable bullet points without pipes '|'.
+    - Removes markdown horizontal dividers (---, ***, ___).
+    - Collapses 3+ consecutive newlines to 2.
+    - Removes empty or orphan list dashes.
+    - Balances unclosed formatting tags (** or `) to prevent eaten text in frontend.
+    - Trims unnecessary whitespace.
+    - Strips stray pipe characters and trims whitespace.
+    """
+    if not text:
+        return ""
+
+    # 1. Strip reasoning blocks
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+
+    # 2. Strip horizontal divider lines
+    # 2. Convert markdown tables into clean bullet points
+    lines = text.split('\n')
+    cleaned_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+
+        # Check if line is a table divider line like |---|---| or |:---|:---| or ---|---
+        if re.match(r'^[\|\s\-:]+$', stripped) and '-' in stripped and ('|' in stripped or len(stripped) >= 3):
+            if '|' in stripped:
+                i += 1
+                continue
+
+        # Check if this line looks like a table row (has pipes and cells)
+        if '|' in stripped:
+            cells = [c.strip() for c in stripped.strip('|').split('|') if c.strip()]
+            # Look ahead: is the next line a table divider line? E.g. |---|---|
+            is_followed_by_divider = False
+            if i + 1 < len(lines):
+                next_stripped = lines[i + 1].strip()
+                if re.match(r'^[\|\s\-:]+$', next_stripped) and '-' in next_stripped and '|' in next_stripped:
+                    is_followed_by_divider = True
+
+            if is_followed_by_divider:
+                # Table header row: skip it
+                i += 1
+                continue
+
+            if len(cells) >= 2:
+                bullet = f"- **{cells[0]}**: {cells[1]}"
+                if len(cells) > 2 and any(cells[2:]):
+                    bullet += f" ({', '.join([c for c in cells[2:] if c])})"
+                cleaned_lines.append(bullet)
+                i += 1
+                continue
+            elif len(cells) == 1:
+                cleaned_lines.append(f"- {cells[0]}")
+                i += 1
+                continue
+
+        # Non-table line with stray pipe characters: remove pipes cleanly
+        if '|' in line:
+            clean_l = re.sub(r'^\s*\|\s*', '', line)
+            clean_l = re.sub(r'\s*\|\s*$', '', clean_l)
+            clean_l = clean_l.replace('|', ' - ')
+            cleaned_lines.append(clean_l)
+        else:
+            cleaned_lines.append(line)
+
+        i += 1
+
+    text = '\n'.join(cleaned_lines)
+
+    # 3. Strip horizontal divider lines
+    text = re.sub(r'^[ \t]*[-*_]{3,}[ \t]*$', '', text, flags=re.MULTILINE)
+
+    # 3. Strip orphan bullet dashes
+    # 4. Strip orphan bullet dashes
+    text = re.sub(r'^[ \t]*[-*]\s*$', '', text, flags=re.MULTILINE)
+
+    # 4. Collapse 3+ newlines to 2
+    # 5. Collapse 3+ newlines to 2
+    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    # 5. Balance unclosed bold or backtick tags to prevent formatting corruption
+    # 6. Balance unclosed bold or backtick tags to prevent formatting corruption
+    if text.count("**") % 2 != 0:
+        text += "**"
+    if text.count("```") % 2 != 0:
+        text += "\n```"
+    elif text.count("`") % 2 != 0:
+        text += "`"
+
+    return text.strip()
 
 
 class LLMClient:
@@ -763,9 +864,8 @@ class LLMClient:
             if result is not None:
                 raw_content, token_usage = result
                 is_escalated = "[ESCALATE_HUMAN]" in raw_content or forced_escalation
-                cleaned_content = raw_content.replace("[ESCALATE_HUMAN]", "").strip()
-                if "<think>" in cleaned_content and "</think>" in cleaned_content:
-                    cleaned_content = re.sub(r'<think>.*?</think>', '', cleaned_content, flags=re.DOTALL).strip()
+                cleaned_content = raw_content.replace("[ESCALATE_HUMAN]", "")
+                cleaned_content = clean_markdown_response(cleaned_content)
                 latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
                 logger.info(f"{prov.upper()} response generated in {latency_ms}ms (escalated: {is_escalated})")
                 return cleaned_content, is_escalated, token_usage, latency_ms
@@ -773,7 +873,8 @@ class LLMClient:
         # 2. Fallback if all providers failed or are not configured
         logger.warning("All LLM providers unavailable or exhausted. Activating deterministic grounded fallback.")
         answer, is_escalated, token_usage = self._fallback_generate(query, context, is_relevant and not forced_escalation, language)
-        cleaned_content = answer.replace("[ESCALATE_HUMAN]", "").strip()
+        cleaned_content = answer.replace("[ESCALATE_HUMAN]", "")
+        cleaned_content = clean_markdown_response(cleaned_content)
         latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
         logger.info(f"Fallback response generated in {latency_ms:.2f}ms (escalated: {is_escalated})")

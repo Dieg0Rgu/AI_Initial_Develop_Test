@@ -28,20 +28,23 @@ const emit = defineEmits<{
 
 <template>
   <header
-    class="sticky top-0 z-30 w-full backdrop-blur-xl transition-colors duration-300 border-b"
+    class="sticky top-0 z-30 w-full backdrop-blur-md transition-colors duration-200 border-b-2"
     :class="
       isDark
-        ? 'bg-stone-900/80 border-stone-800 text-stone-100'
-        : 'bg-white border-stone-300 text-black shadow-xs'
+        ? 'bg-stone-950/95 border-stone-800 text-stone-100'
+        : 'bg-white/95 border-stone-900 text-stone-950 shadow-xs'
     "
   >
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-      <!-- Brand & Official Logo -->
+      <!-- Brand & Constructivist Logo Framing -->
       <div class="flex items-center gap-3">
+        <!-- Logo Reticle Framing -->
         <div
-          class="w-11 h-11 rounded-full overflow-hidden border-2 shadow-sm transition-transform hover:scale-105 flex items-center justify-center shrink-0"
-          :class="isDark ? 'border-amber-600/50 bg-stone-900' : 'border-amber-600 bg-white'"
+          class="w-11 h-11 border-2 p-0.5 transition-transform hover:scale-105 flex items-center justify-center shrink-0 relative shadow-[2px_2px_0px_0px_#d97706]"
+          :class="isDark ? 'border-amber-500 bg-stone-900' : 'border-stone-900 bg-white'"
         >
+          <div class="absolute -top-1 -left-1 w-1.5 h-1.5 bg-amber-600"></div>
+          <div class="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-amber-600"></div>
           <img
             :src="logoImg"
             alt="Gastroteacher Logo"
@@ -52,136 +55,128 @@ const emit = defineEmits<{
         <div>
           <div class="flex items-center gap-2">
             <span
-              class="font-black text-xl tracking-tight"
-              :class="isDark ? 'bg-linear-to-r from-amber-400 via-orange-300 to-amber-200 bg-clip-text text-transparent' : 'text-amber-800'"
+              class="font-black text-lg tracking-tight uppercase"
+              :class="isDark ? 'text-amber-400' : 'text-stone-950'"
             >
               Gastroteacher
             </span>
             <span
-              class="text-[10px] uppercase font-black px-2 py-0.5 rounded-full border tracking-wider"
-              :class="isDark ? 'bg-amber-950/60 border-amber-800/60 text-amber-300' : 'bg-amber-100 border-amber-500 text-amber-950'"
+              class="font-mono text-[9px] uppercase font-black px-1.5 py-0.5 border tracking-wider"
+              :class="isDark ? 'bg-amber-950/80 border-amber-600 text-amber-300' : 'bg-amber-100 border-stone-900 text-stone-950'"
             >
-              RAG v1.0
+              [SYS // RAG-v1]
             </span>
           </div>
           <p
-            class="text-xs font-bold"
-            :class="isDark ? 'text-stone-300' : 'text-stone-900'"
+            class="font-mono text-[11px] font-bold tracking-tight"
+            :class="isDark ? 'text-stone-400' : 'text-stone-700'"
           >
-            {{ labels.subtitle }}
+            // {{ labels.subtitle.toUpperCase() }}
           </p>
         </div>
       </div>
 
-      <!-- Actions & Status -->
+      <!-- Actions & Status Panel -->
       <div class="flex items-center gap-2 sm:gap-2.5">
-        <!-- Status Indicator -->
+        <!-- Technical Status Indicator -->
         <div
-          class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black border shadow-xs"
+          class="hidden lg:flex items-center gap-2 px-2.5 py-1 text-[11px] font-mono font-black border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)]"
           :class="
             isOnline
-              ? isDark ? 'bg-emerald-950/40 border-emerald-800/50 text-emerald-400' : 'bg-emerald-100 border-emerald-500 text-emerald-950'
-              : isDark ? 'bg-rose-950/40 border-rose-800/50 text-rose-400' : 'bg-rose-100 border-rose-500 text-rose-950'
+              ? isDark
+                ? 'border-emerald-600 bg-stone-900 text-emerald-400'
+                : 'border-stone-900 bg-emerald-50 text-emerald-950'
+              : isDark
+                ? 'border-rose-600 bg-stone-900 text-rose-400'
+                : 'border-stone-900 bg-rose-50 text-rose-950'
           "
         >
-          <span class="relative flex h-2 w-2">
-            <span
-              class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-              :class="isOnline ? 'bg-emerald-400' : 'bg-rose-400'"
-            ></span>
-            <span
-              class="relative inline-flex rounded-full h-2 w-2"
-              :class="isOnline ? 'bg-emerald-500' : 'bg-rose-500'"
-            ></span>
+          <div
+            class="w-2 h-2 shrink-0"
+            :class="isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"
+          ></div>
+          <span class="tracking-wide">
+            {{ isOnline ? '[ONLINE // READY]' : '[OFFLINE // ERR]' }}
           </span>
-          <span>{{ isOnline ? labels.statusOnline : labels.statusOffline }}</span>
+          <span class="text-[10px] opacity-70">
+            (#{{ totalQueries }})
+          </span>
         </div>
-
-        <!-- Export PDF Button -->
-        <button
-          type="button"
-          @click="emit('openExportPdf')"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 cursor-pointer"
-          :class="
-            isDark
-              ? 'bg-stone-800/90 hover:bg-stone-700/90 border-stone-700 text-rose-300 hover:border-rose-700/50'
-              : 'bg-white hover:bg-rose-50 border-stone-300 text-rose-950 hover:border-rose-600/50'
-          "
-          :title="labels.exportPdfBtn"
-        >
-          <svg class="w-4 h-4 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
-          <span class="hidden sm:inline">{{ labels.exportPdfBtn }}</span>
-        </button>
-
-        <!-- Language Switcher -->
-        <button
-          type="button"
-          @click="emit('toggleLang')"
-          class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-black transition-all duration-200 shadow-xs hover:scale-105 active:scale-95 cursor-pointer"
-          :class="
-            isDark
-              ? 'bg-stone-800/90 hover:bg-stone-700 border-stone-700 text-stone-200'
-              : 'bg-white hover:bg-stone-100 border-stone-300 text-black'
-          "
-          :title="currentLang === 'es' ? 'Switch to English' : 'Cambiar a Español'"
-        >
-          <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="2" y1="12" x2="22" y2="12"/>
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/>
-          </svg>
-          <span :class="{ 'text-amber-700 dark:text-amber-400 font-black': currentLang === 'es', 'opacity-60': currentLang !== 'es' }">ES</span>
-          <span class="opacity-40">|</span>
-          <span :class="{ 'text-amber-700 dark:text-amber-400 font-black': currentLang === 'en', 'opacity-60': currentLang !== 'en' }">EN</span>
-        </button>
 
         <!-- Metrics Button -->
         <button
           type="button"
           @click="emit('openMetrics')"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all duration-200 shadow-xs hover:scale-102 active:scale-98 cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs font-black uppercase tracking-wider border-2 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 cursor-pointer shadow-[2px_2px_0px_0px_#d97706]"
           :class="
             isDark
-              ? 'bg-stone-800/90 hover:bg-stone-700/90 border-stone-700 text-stone-200 hover:border-amber-700/50'
-              : 'bg-white hover:bg-amber-50 border-stone-300 text-black hover:border-amber-600/50'
+              ? 'bg-stone-900 border-amber-500/80 text-amber-400 hover:bg-stone-800'
+              : 'bg-white border-stone-900 text-stone-950 hover:bg-amber-50'
           "
           :title="labels.metricsBtn"
         >
-          <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="20" x2="18" y2="10"/>
             <line x1="12" y1="20" x2="12" y2="4"/>
             <line x1="6" y1="20" x2="6" y2="14"/>
           </svg>
-          <span class="hidden md:inline">{{ labels.metricsBtn }}</span>
-          <span
-            v-if="totalQueries > 0"
-            class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-600 text-white font-bold"
-          >
-            {{ totalQueries }}
-          </span>
+          <span class="hidden sm:inline">{{ labels.metricsBtn }}</span>
+        </button>
+
+        <!-- Export Documents / Chat PDF Button -->
+        <button
+          type="button"
+          @click="emit('openExportPdf')"
+          class="flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs font-black uppercase tracking-wider border-2 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 cursor-pointer shadow-[2px_2px_0px_0px_#e11d48]"
+          :class="
+            isDark
+              ? 'bg-stone-900 border-rose-500/80 text-rose-400 hover:bg-stone-800'
+              : 'bg-white border-stone-900 text-rose-950 hover:bg-rose-50'
+          "
+          :title="labels.exportPdfBtn"
+        >
+          <svg class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span class="hidden sm:inline">{{ labels.exportPdfBtn }}</span>
+        </button>
+
+        <!-- Language Toggle -->
+        <button
+          type="button"
+          @click="emit('toggleLang')"
+          class="px-2.5 py-1.5 font-mono text-xs font-black border-2 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 cursor-pointer"
+          :class="
+            isDark
+              ? 'bg-stone-900 border-stone-700 text-stone-200 hover:border-amber-500 shadow-[2px_2px_0px_0px_#78350f]'
+              : 'bg-white border-stone-900 text-stone-950 hover:bg-stone-100 shadow-[2px_2px_0px_0px_#1c1917]'
+          "
+          :title="currentLang === 'es' ? 'Switch to English' : 'Cambiar a Español'"
+        >
+          <span :class="currentLang === 'es' ? 'text-amber-600 dark:text-amber-400' : ''">ES</span>
+          <span class="mx-0.5 opacity-40">/</span>
+          <span :class="currentLang === 'en' ? 'text-amber-600 dark:text-amber-400' : ''">EN</span>
         </button>
 
         <!-- Theme Toggle -->
         <button
           type="button"
           @click="emit('toggleTheme')"
-          class="p-2 rounded-xl border transition-all duration-200 shadow-xs hover:scale-105 active:scale-95 cursor-pointer"
+          class="p-2 border-2 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 cursor-pointer"
           :class="
             isDark
-              ? 'bg-stone-800/90 hover:bg-stone-700 border-stone-700 text-amber-300'
-              : 'bg-white hover:bg-stone-100 border-stone-300 text-amber-700'
+              ? 'bg-stone-900 border-stone-700 text-amber-400 hover:border-amber-400 shadow-[2px_2px_0px_0px_#f59e0b]'
+              : 'bg-white border-stone-900 text-stone-800 hover:text-amber-600 shadow-[2px_2px_0px_0px_#1c1917]'
           "
           :title="isDark ? labels.themeLight : labels.themeDark"
         >
-          <svg v-if="isDark" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Sun Icon -->
+          <svg v-if="isDark" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <circle cx="12" cy="12" r="5"/>
-            <line x1="12" y1="12" x2="12" y2="3"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
             <line x1="12" y1="21" x2="12" y2="23"/>
             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
             <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -190,7 +185,8 @@ const emit = defineEmits<{
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
-          <svg v-else class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Moon Icon -->
+          <svg v-else class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
         </button>

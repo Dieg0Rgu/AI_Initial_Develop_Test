@@ -50,3 +50,46 @@ def test_payment_three_level_full_progression():
     assert r3["is_escalated"] is True
     assert "Nivel 3" in r3["response"] or "Equipo Humano" in r3["response"]
 
+
+def test_payment_conversational_followup_progression():
+    """Verify progression with realistic conversational expressions like 'sigue sin funcionar' and 'no sirvio'."""
+    sid = "sess_conversational_456"
+    faq_service.clear_session(sid)
+
+    # Step 1: Initial query
+    r1 = client.post("/api/chat", json={"message": "no puedo pagar con mi tarjeta", "session_id": sid}).json()
+    assert r1["is_escalated"] is False
+    assert "Nivel 1" in r1["response"]
+
+    # Step 2: Conversational followup
+    r2 = client.post("/api/chat", json={"message": "sigue sin funcionar", "session_id": sid}).json()
+    assert r2["is_escalated"] is False
+    assert "Nivel 2" in r2["response"]
+
+    # Step 3: Final insistence -> Escalation
+    r3 = client.post("/api/chat", json={"message": "no sirvio", "session_id": sid}).json()
+    assert r3["is_escalated"] is True
+    assert "Nivel 3" in r3["response"] or "Equipo Humano" in r3["response"]
+
+
+def test_markdown_table_cleaning_removes_pipes_and_dividers():
+    """Verify clean_markdown_response transforms markdown tables into text without pipes or lines."""
+    from app.llm.client import clean_markdown_response
+
+    sample_table = (
+        "| Modalidad | Rango de precios (COP) |\n"
+        "|-----------|------------------------|\n"
+        "| Presencial (clases en nuestras sedes de Bogotá o Medellín) | Aproximadamente 1.200.000 – 1.800.000 COP por ciclo (12 semanas). |\n"
+        "| Online en vivo (clases 100 % virtuales) | Aproximadamente 1.000.000 – 1.500.000 COP por ciclo (12 semanas). |\n"
+        "---\n"
+        "Para más información escríbenos."
+    )
+
+    cleaned = clean_markdown_response(sample_table)
+    assert "|" not in cleaned
+    assert "---" not in cleaned
+    assert "Presencial" in cleaned
+    assert "Online en vivo" in cleaned
+    assert "1.200.000" in cleaned
+
+
