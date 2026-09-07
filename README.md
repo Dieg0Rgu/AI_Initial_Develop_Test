@@ -337,6 +337,56 @@ Returns total query counts, escalation rates, token consumption, and cache savin
 
 ---
 
+---
+
+## 🧩 Mejoras de Evidencia (Persistencia, Dashboard, DevOps)
+
+### 1. Módulo de Persistencia Relacional (SQLite) & Bandeja de Tickets
+El backend registra en SQLite (`backend/data/gastroteacher.db`) cada interacción con un esquema relacional de tres tablas:
+
+| Tabla | Campos principales |
+| :--- | :--- |
+| `sessions` | `id` (PK), `user_id`, `channel`, `created_at`, `last_activity_at` |
+| `messages` | `id` (PK), `session_id` (FK → sessions), `role`, `content`, `is_escalated`, `created_at` |
+| `escalation_tickets` | `id` (PK), `session_id` (FK), `intent`, `contact_reason`, `status` (`abierto`/`en_proceso`/`cerrado`), `created_at`, `updated_at` |
+
+**Endpoints:**
+- `GET /api/history` → sesiones recientes con conteo de mensajes y escalamientos.
+- `GET /api/history/{session_id}` → transcripción completa de una sesión.
+- `GET /api/tickets` → bandeja de tickets de escalamiento humano (filtrable por estado).
+- `PATCH /api/tickets/{id}` → transición de estado `abierto → en_proceso → cerrado`.
+
+En el frontend, el botón **HISTORIAL** abre un panel con dos pestañas: *Historial* (conversaciones pasadas y su transcripción) y *Bandeja de Tickets* (cola del asesor humano con cambio de estado).
+
+### 2. Dashboard Visual de Métricas (Gráficos SVG nativos)
+El modal de métricas (`MetricsModal.vue`) incluye ahora un panel gráfico sin dependencias externas:
+- **IA vs Escalamiento Humano**: barras comparativas con porcentajes.
+- **Eficiencia de Caché**: anillo SVG con tasa de acierto, hits/misses, tokens ahorrados y ahorro en USD/COP.
+- **Distribución de Intenciones**: barras de los temas más consultados (horarios, precios, matrícula, certificaciones, traslados, saludos, escalamientos).
+
+El backend clasifica cada consulta (`app/services/intent_service.py`) y la expone en `GET /api/metrics` bajo la clave `intents`.
+
+### 3. Despliegue con Docker & Docker Compose
+```bash
+docker compose up --build
+# Frontend: http://localhost:80   (Nginx + proxy /api → backend)
+# Backend:  http://localhost:8000 (FastAPI + Swagger /docs)
+```
+- `frontend/Rage_frontend/Dockerfile` — build multietapa (Node 20 → Nginx 1.27) con proxy inverso hacia el backend.
+- `backend/Dockerfile` — imagen Python 3.12-slim con FastAPI, ChromaDB y SQLite.
+- `docker-compose.yml` — orquesta ambos servicios con volumen persistente (`gastroteacher_data`) y conectividad a Ollama del host (`host.docker.internal`).
+
+### 4. Arranque Multiplataforma
+Un solo comando en cualquier sistema operativo verifica/crea el venv con Python 3.12, instala dependencias si faltan, copia `.env.example → .env` y levanta backend + frontend concurrentemente:
+
+| SO | Comando |
+| :--- | :--- |
+| Windows (PowerShell) | `powershell -ExecutionPolicy Bypass -File .\start.ps1` |
+| Windows (CMD) | `start.bat` |
+| Linux / macOS | `./start.sh` |
+
+---
+
 ## 👥 Support & Official Contact
 - **Admissions & Support Email**: `edig0rgudevia@gmail.com`
 - **WhatsApp / Telegram Line**: `+57 313 730 1501`

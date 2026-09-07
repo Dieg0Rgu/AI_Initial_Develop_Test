@@ -19,8 +19,9 @@ class MetricsTracker:
         self.total_prompt_tokens: int = 0
         self.total_completion_tokens: int = 0
         self.latencies_ms: List[float] = []
+        self.intents: Dict[str, int] = {}
 
-    def record_query(self, is_escalated: bool, prompt_tokens: int, completion_tokens: int, latency_ms: float):
+    def record_query(self, is_escalated: bool, prompt_tokens: int, completion_tokens: int, latency_ms: float, intent: str = "otros"):
         """
         Records a completed query interaction.
         """
@@ -31,10 +32,15 @@ class MetricsTracker:
         self.total_prompt_tokens += prompt_tokens
         self.total_completion_tokens += completion_tokens
         self.latencies_ms.append(latency_ms)
+        self.intents[intent] = self.intents.get(intent, 0) + 1
 
         # Keep rolling window of last 100 latencies
         if len(self.latencies_ms) > 100:
             self.latencies_ms.pop(0)
+
+    def record_intent(self, intent: str) -> None:
+        """Registers a single intent occurrence (used by cached / FAQ paths)."""
+        self.intents[intent] = self.intents.get(intent, 0) + 1
 
     def get_summary(self) -> Dict[str, Any]:
         """
@@ -77,7 +83,10 @@ class MetricsTracker:
                 "avg_latency_ms": round(avg_latency, 2),
                 "cache": cache_stats,
                 "uptime_seconds": uptime_seconds
-            }
+            },
+            "intents": dict(
+                sorted(self.intents.items(), key=lambda item: -item[1])
+            )
         }
 
     def reset(self):
@@ -88,6 +97,7 @@ class MetricsTracker:
         self.total_prompt_tokens = 0
         self.total_completion_tokens = 0
         self.latencies_ms = []
+        self.intents = {}
         response_cache.clear()
 
 

@@ -1,9 +1,8 @@
 from __future__ import annotations
 import os
 from pathlib import Path
-from typing import List
-from typing import List, Any, Union
-from pydantic_settings import BaseSettings
+from typing import List, Any, Union, Annotated
+from pydantic_settings import BaseSettings, NoDecode
 from pydantic import ConfigDict, field_validator
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +21,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     ENVIRONMENT: str = "development"
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: Annotated[List[str], NoDecode] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
@@ -44,6 +43,13 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 100
     SIMILARITY_THRESHOLD: float = 0.45  # Relevance threshold for cosine distance
     TOP_K_RESULTS: int = 3
+
+    # Relational Persistence (SQLite)
+    DB_PATH: str = (
+        "/tmp/gastroteacher.db"
+        if IS_SERVERLESS
+        else str(BASE_DIR / "data" / "gastroteacher.db")
+    )
 
     # External LLM Providers & API Key Rotation Settings
     LLM_PROVIDERS: Union[List[str], str] = ["groq", "gemini", "openai", "ollama"]
@@ -73,6 +79,10 @@ class Settings(BaseSettings):
     @field_validator("PORT")
     @classmethod
     def validate_port(cls, v: int) -> int:
+        if v == 0:
+            # PORT=0 significa "sin configurar" (puerto efímero) en algunos
+            # entornos; lo tratamos como el valor por defecto del proyecto.
+            return 8000
         if not (1 <= v <= 65535):
             raise ValueError("PORT must be between 1 and 65535.")
         return v
@@ -108,9 +118,9 @@ class Settings(BaseSettings):
             raise ValueError("SEMANTIC_CACHE_THRESHOLD must be between 0.0 and 1.0.")
         return v
 
-    @field_validator("LLM_PROVIDERS", "GROQ_API_KEYS", "GEMINI_API_KEYS", "OPENAI_API_KEYS", mode="after")
+    @field_validator("CORS_ORIGINS", "LLM_PROVIDERS", "GROQ_API_KEYS", "GEMINI_API_KEYS", "OPENAI_API_KEYS", mode="before")
     @classmethod
-    def parse_comma_separated_list(cls, v: Any) -> List[str]:
+    def parse_comma_separated_list(cls, v: Any) -> Any:
         if isinstance(v, str):
             if not v.strip():
                 return []

@@ -1,5 +1,5 @@
 import pytest
-from app.config import settings
+from app.config import Settings
 from app.llm.prompts import build_rag_prompt
 from app.rag.loader import DocumentLoader
 from app.rag.chunker import TextChunker
@@ -14,11 +14,14 @@ from app.utils.sweet_alert_console import SweetAlert
 from app.utils.pdf_generator import GastroteacherPDFGenerator
 
 def test_config_defaults():
-    assert settings.PORT == 8000
-    assert settings.SIMILARITY_THRESHOLD == 0.45
-    assert settings.ESCALATION_EMAIL == "edig0rgudevia@gmail.com"
-    assert settings.CACHE_ENABLED is True
-    assert settings.MAX_CACHE_SIZE > 0
+    # Se validan los DEFAULTS del modelo, sin leer el .env local (que puede
+    # sobreescribir valores como ESCALATION_EMAIL en la máquina del desarrollador).
+    isolated = Settings(_env_file=None)
+    assert isolated.PORT == 8000
+    assert isolated.SIMILARITY_THRESHOLD == 0.45
+    assert isolated.ESCALATION_EMAIL == "edig0rgudevia@gmail.com"
+    assert isolated.CACHE_ENABLED is True
+    assert isolated.MAX_CACHE_SIZE > 0
 
 def test_build_rag_prompt_bilingual():
     prompt_es = build_rag_prompt("¿Cuáles son los precios?", "Contexto oficial de precios", "es")

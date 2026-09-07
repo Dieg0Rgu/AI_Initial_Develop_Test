@@ -1,4 +1,10 @@
-import type { MetricsSummary, HealthStatus } from '../types/chat'
+import type {
+  MetricsSummary,
+  HealthStatus,
+  ChatSessionSummary,
+  SessionMessage,
+  EscalationTicket
+} from '../types/chat'
 
 // If running in production with external backend (Render/Railway/túnel), use VITE_API_URL or VITE_API_BASE_URL.
 // In same-domain Vercel deployment, defaults to '' (relative paths /api/...).
@@ -211,6 +217,54 @@ export async function resetMetrics(): Promise<void> {
     }
     throw new Error('Failed to reset metrics')
   }
+}
+
+// -------------------------------------------------------------
+// Persistencia: Historial de Conversaciones & Bandeja de Tickets
+// -------------------------------------------------------------
+
+export async function fetchSessions(limit = 30): Promise<ChatSessionSummary[]> {
+  const res = await fetch(`${API_BASE}/api/history?limit=${limit}`)
+  if (!res.ok) {
+    throw new Error('Failed to fetch sessions')
+  }
+  const data = await res.json()
+  return data.sessions || []
+}
+
+export async function fetchSessionMessages(sessionId: string): Promise<SessionMessage[]> {
+  const res = await fetch(`${API_BASE}/api/history/${encodeURIComponent(sessionId)}`)
+  if (!res.ok) {
+    throw new Error('Failed to fetch session messages')
+  }
+  const data = await res.json()
+  return data.messages || []
+}
+
+export async function fetchTickets(): Promise<EscalationTicket[]> {
+  const res = await fetch(`${API_BASE}/api/tickets`)
+  if (!res.ok) {
+    throw new Error('Failed to fetch tickets')
+  }
+  const data = await res.json()
+  return data.tickets || []
+}
+
+export async function updateTicketStatus(
+  ticketId: number,
+  status: 'abierto' | 'en_proceso' | 'cerrado'
+): Promise<EscalationTicket> {
+  const res = await fetch(`${API_BASE}/api/tickets/${ticketId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || `Failed to update ticket: ${res.status}`)
+  }
+  const data = await res.json()
+  return data.ticket
 }
 
 export async function fetchHealth(): Promise<HealthStatus> {

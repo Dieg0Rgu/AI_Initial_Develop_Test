@@ -5,17 +5,15 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 try:
-    from app.config import settings
     from app.rag.retriever import RAGRetriever
     from app.llm.client import (
         OllamaClient,
-        LLMClient,
         clean_markdown_response,
         normalize_simple,
         contains_profanity,
         is_gibberish,
-        is_prompt_injection_or_leakage,
         is_grupo_a_intent,
+        classify_grupo_a_intent,
         extract_name_intent,
         has_exact_keyword,
         GREETING_WORDS,
@@ -27,18 +25,18 @@ try:
     from app.cache.faq_service import faq_service
     from app.api.routers.nonsense import check_out_of_scope
     from app.metrics.metrics_tracker import metrics_tracker
+    from app.db import upsert_session, record_message, record_escalation_ticket
+    from app.services.intent_service import classify_intent_category
 except ImportError:
-    from backend.app.config import settings
     from backend.app.rag.retriever import RAGRetriever
     from backend.app.llm.client import (
         OllamaClient,
-        LLMClient,
         clean_markdown_response,
         normalize_simple,
         contains_profanity,
         is_gibberish,
-        is_prompt_injection_or_leakage,
         is_grupo_a_intent,
+        classify_grupo_a_intent,
         extract_name_intent,
         has_exact_keyword,
         GREETING_WORDS,
@@ -50,6 +48,8 @@ except ImportError:
     from backend.app.cache.faq_service import faq_service
     from backend.app.api.routers.nonsense import check_out_of_scope
     from backend.app.metrics.metrics_tracker import metrics_tracker
+    from backend.app.db import upsert_session, record_message, record_escalation_ticket
+    from backend.app.services.intent_service import classify_intent_category
 
 router = APIRouter(prefix="/api", tags=["Chat & RAG"])
 
@@ -131,7 +131,6 @@ async def process_chat(request: ChatRequest):
     detected_name = extract_name_intent(query)
     has_vulgarity = contains_profanity(query)
     gibberish = is_gibberish(query)
-    is_injection = is_prompt_injection_or_leakage(query)
     is_grupo_a = is_grupo_a_intent(query)
     has_academic_intent = has_exact_keyword(words, IN_SCOPE_KEYWORDS) and not is_grupo_a
 
@@ -149,12 +148,18 @@ async def process_chat(request: ChatRequest):
     is_oos, oos_message = check_out_of_scope(query, lang)
     if is_oos:
         total_latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
+        intent_category = classify_intent_category(norm_q, words)
         metrics_tracker.record_query(
             is_escalated=False,
             prompt_tokens=len(query) // 4,
             completion_tokens=len(oos_message) // 4,
-            latency_ms=total_latency_ms
+            latency_ms=total_latency_ms,
+            intent=intent_category
         )
+        # Persistencia relacional
+        upsert_session(request.session_id)
+        record_message(request.session_id, "user", query)
+        record_message(request.session_id, "assistant", oos_message)
         return ChatResponse(
             response=oos_message,
             is_escalated=False,
@@ -177,12 +182,26 @@ async def process_chat(request: ChatRequest):
         total_latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
         p_tok = len(query) // 4
         c_tok = len(cleaned_faq) // 4
+        intent_category = classify_intent_category(
+            norm_q, words, is_grupo_a=faq_escalated, is_escalated=faq_escalated
+        )
         metrics_tracker.record_query(
             is_escalated=faq_escalated,
             prompt_tokens=p_tok,
             completion_tokens=c_tok,
-            latency_ms=total_latency_ms
+            latency_ms=total_latency_ms,
+            intent=intent_category
         )
+        # Persistencia relacional
+        upsert_session(request.session_id)
+        record_message(request.session_id, "user", query)
+        record_message(request.session_id, "assistant", cleaned_faq, is_escalated=faq_escalated)
+        if faq_escalated:
+            record_escalation_ticket(
+                request.session_id,
+                intent=classify_grupo_a_intent(query) or "faq_escalation",
+                contact_reason=query[:500],
+            )
         return ChatResponse(
             response=cleaned_faq,
             is_escalated=faq_escalated,
@@ -205,11 +224,24 @@ async def process_chat(request: ChatRequest):
         cached_result = response_cache.get(cache_key)
         if cached_result:
             latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
+            intent_category = classify_intent_category(
+                norm_q, words, is_escalated=cached_result["is_escalated"]
+            )
             metrics_tracker.record_query(
                 is_escalated=cached_result["is_escalated"],
                 prompt_tokens=0,
                 completion_tokens=0,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
+                intent=intent_category
+            )
+            # Persistencia relacional
+            upsert_session(request.session_id)
+            record_message(request.session_id, "user", query)
+            record_message(
+                request.session_id,
+                "assistant",
+                clean_markdown_response(cached_result["response"]),
+                is_escalated=cached_result["is_escalated"],
             )
             return ChatResponse(
                 response=clean_markdown_response(cached_result["response"]),
@@ -226,11 +258,24 @@ async def process_chat(request: ChatRequest):
         if semantic_hit is not None:
             cached_result, sim_score = semantic_hit
             latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
+            intent_category = classify_intent_category(
+                norm_q, words, is_escalated=cached_result.get("is_escalated", False)
+            )
             metrics_tracker.record_query(
                 is_escalated=cached_result.get("is_escalated", False),
                 prompt_tokens=0,
                 completion_tokens=0,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
+                intent=intent_category
+            )
+            # Persistencia relacional
+            upsert_session(request.session_id)
+            record_message(request.session_id, "user", query)
+            record_message(
+                request.session_id,
+                "assistant",
+                clean_markdown_response(cached_result["response"]),
+                is_escalated=cached_result.get("is_escalated", False),
             )
             return ChatResponse(
                 response=clean_markdown_response(cached_result["response"]),
@@ -289,12 +334,27 @@ async def process_chat(request: ChatRequest):
         semantic_cache.set(query, lang, response_data)
 
     # 6. Record metrics
+    intent_category = classify_intent_category(
+        norm_q, words, is_greeting=is_greeting, is_grupo_a=is_grupo_a, is_escalated=is_escalated
+    )
     metrics_tracker.record_query(
         is_escalated=is_escalated,
         prompt_tokens=token_usage.get("prompt_tokens", 0),
         completion_tokens=token_usage.get("completion_tokens", 0),
-        latency_ms=total_latency_ms
+        latency_ms=total_latency_ms,
+        intent=intent_category
     )
+
+    # 7. Persistencia relacional (sesiones, mensajes y tickets de escalamiento)
+    upsert_session(request.session_id)
+    record_message(request.session_id, "user", query)
+    record_message(request.session_id, "assistant", response_text, is_escalated=is_escalated)
+    if is_escalated:
+        record_escalation_ticket(
+            request.session_id,
+            intent=classify_grupo_a_intent(query) or "fuera_de_alcance",
+            contact_reason=query[:500],
+        )
 
     return ChatResponse(
         response=response_text,

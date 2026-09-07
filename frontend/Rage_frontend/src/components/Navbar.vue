@@ -12,6 +12,7 @@ defineProps<{
     statusOnline: string
     statusOffline: string
     metricsBtn: string
+    historyBtn: string
     exportPdfBtn: string
     themeLight: string
     themeDark: string
@@ -21,6 +22,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'toggleTheme'): void
   (e: 'openMetrics'): void
+  (e: 'openHistory'): void
   (e: 'toggleLang'): void
   (e: 'openExportPdf'): void
 }>()
@@ -121,6 +123,26 @@ const emit = defineEmits<{
             <line x1="6" y1="20" x2="6" y2="14"/>
           </svg>
           <span class="hidden sm:inline">{{ labels.metricsBtn }}</span>
+        </button>
+
+        <!-- History & Ticket Queue Button -->
+        <button
+          type="button"
+          @click="emit('openHistory')"
+          class="flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs font-black uppercase tracking-wider border-2 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 cursor-pointer shadow-[2px_2px_0px_0px_#059669]"
+          :class="
+            isDark
+              ? 'bg-stone-900 border-emerald-500/80 text-emerald-400 hover:bg-stone-800'
+              : 'bg-white border-stone-900 text-emerald-950 hover:bg-emerald-50'
+          "
+          :title="labels.historyBtn"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4V5z"/>
+            <line x1="8" y1="9" x2="16" y2="9"/>
+            <line x1="8" y1="13" x2="13" y2="13"/>
+          </svg>
+          <span class="hidden sm:inline">{{ labels.historyBtn }}</span>
         </button>
 
         <!-- Export Documents / Chat PDF Button -->

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Swal from 'sweetalert2'
 import type { MetricsSummary } from '../types/chat'
 import { fetchMetrics, resetMetrics } from '../services/api'
@@ -15,6 +15,14 @@ const props = defineProps<{
     resolvedByAI: string
     humanEscalation: string
     cacheHits: string
+    chartAIvsHuman: string
+    chartCacheTitle: string
+    chartIntentsTitle: string
+    hitRate: string
+    savingsUsd: string
+    savingsCop: string
+    cacheMisses: string
+    intentsEmpty: string
     tokenSectionTitle: string
     totalTokens: string
     savedTokens: string
@@ -47,6 +55,50 @@ const emit = defineEmits<{
 const metrics = ref<MetricsSummary | null>(null)
 const loading = ref(true)
 const resetting = ref(false)
+
+const INTENT_LABELS: Record<string, string> = {
+  horarios: 'Horarios y Jornadas',
+  precios: 'Precios y Financiación',
+  matricula: 'Matrícula e Inscripción',
+  certificaciones: 'Certificaciones Oficiales',
+  traslados: 'Traslados de Sede',
+  saludo: 'Saludos',
+  escalamiento: 'Escalamiento Humano',
+  otros: 'Otros'
+}
+
+// Gráfico: IA vs Escalamiento Humano
+const aiVsHuman = computed(() => {
+  const total = metrics.value?.total_queries || 0
+  const ai = metrics.value?.resolved_by_ai_queries || 0
+  const human = metrics.value?.escalated_queries || 0
+  const aiPct = total > 0 ? Math.round((ai / total) * 100) : 0
+  const humanPct = total > 0 ? Math.round((human / total) * 100) : 0
+  return { total, ai, human, aiPct, humanPct }
+})
+
+// Gráfico: anillo de eficiencia de caché (SVG)
+const cacheRing = computed(() => {
+  const cache = metrics.value?.performance?.cache
+  const pct = cache?.hit_rate_pct || 0
+  const R = 40
+  const CIRC = 2 * Math.PI * R
+  const filled = (pct / 100) * CIRC
+  return { pct, filled, CIRC, R }
+})
+
+// Gráfico: distribución de intenciones
+const intentsList = computed(() => {
+  const raw = metrics.value?.intents || {}
+  const list = Object.entries(raw).map(([key, count]) => ({
+    key,
+    label: INTENT_LABELS[key] || key,
+    count
+  }))
+  list.sort((a, b) => b.count - a.count)
+  const max = list.length > 0 ? list[0].count : 1
+  return { list, max }
+})
 
 async function loadMetrics() {
   loading.value = true
@@ -112,7 +164,7 @@ onMounted(() => {
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-xs transition-opacity">
     <div
-      class="w-full max-w-2xl border-2 p-6 sm:p-7 transition-all duration-200 relative overflow-hidden"
+      class="w-full max-w-2xl border-2 p-6 sm:p-7 transition-all duration-200 relative overflow-y-auto max-h-[92vh]"
       :class="isDark ? 'bg-stone-950 border-stone-700 text-stone-100 shadow-[8px_8px_0px_0px_#d97706]' : 'bg-white border-stone-900 text-stone-950 shadow-[8px_8px_0px_0px_#1c1917]'"
     >
       <!-- Corner Marks -->
@@ -218,6 +270,123 @@ onMounted(() => {
             <div class="text-[10px] uppercase font-black tracking-wider text-amber-700 dark:text-amber-400">// CACHÉ HITS</div>
             <div class="text-xl font-black text-amber-700 dark:text-amber-400 mt-0.5">{{ metrics.performance?.cache?.hits || 0 }}</div>
             <div class="text-[10px] text-stone-500 mt-1 font-bold">{{ labels.cacheHits }}</div>
+          </div>
+        </div>
+
+        <!-- Visual Dashboard Charts (SVG nativo, sin dependencias) -->
+        <div
+          class="p-4 border-2 border-stone-900 dark:border-stone-700 space-y-4 shadow-[3px_3px_0px_0px_#1c1917] dark:shadow-[3px_3px_0px_0px_#000]"
+          :class="isDark ? 'bg-stone-900/60' : 'bg-stone-50'"
+        >
+          <div class="flex items-center justify-between border-b border-stone-300 dark:border-stone-800 pb-2">
+            <span class="text-xs font-black uppercase text-amber-700 dark:text-amber-400">// DASHBOARD VISUAL</span>
+            <span class="text-[10px] text-stone-500 uppercase">[CHARTS // SVG]</span>
+          </div>
+
+          <!-- Chart 1: IA vs Escalamiento Humano -->
+          <div>
+            <div class="text-[10px] uppercase font-black tracking-wider text-stone-600 dark:text-stone-400 mb-2">
+              {{ labels.chartAIvsHuman }}
+            </div>
+            <div class="space-y-2">
+              <div>
+                <div class="flex items-center justify-between text-[10px] font-black mb-0.5">
+                  <span class="text-emerald-700 dark:text-emerald-400">// {{ labels.resolvedByAI }} ({{ aiVsHuman.ai }})</span>
+                  <span class="text-stone-500">{{ aiVsHuman.aiPct }}%</span>
+                </div>
+                <div class="h-3 border border-stone-900 dark:border-stone-700 bg-white dark:bg-stone-950 overflow-hidden">
+                  <div
+                    class="h-full bg-emerald-600 dark:bg-emerald-500 transition-all duration-700"
+                    :style="{ width: aiVsHuman.total > 0 ? Math.max(aiVsHuman.aiPct, 2) + '%' : '0%' }"
+                  ></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-[10px] font-black mb-0.5">
+                  <span class="text-rose-700 dark:text-rose-400">// {{ labels.humanEscalation }} ({{ aiVsHuman.human }})</span>
+                  <span class="text-stone-500">{{ aiVsHuman.humanPct }}%</span>
+                </div>
+                <div class="h-3 border border-stone-900 dark:border-stone-700 bg-white dark:bg-stone-950 overflow-hidden">
+                  <div
+                    class="h-full bg-rose-600 dark:bg-rose-500 transition-all duration-700"
+                    :style="{ width: aiVsHuman.total > 0 ? Math.max(aiVsHuman.humanPct, 2) + '%' : '0%' }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 2: Eficiencia de Caché (anillo SVG + ahorro) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+            <div class="flex items-center gap-4">
+              <svg class="w-28 h-28 shrink-0" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" :r="cacheRing.R" fill="none" stroke-width="12"
+                  :class="isDark ? 'stroke-stone-800' : 'stroke-stone-200'" />
+                <circle
+                  cx="50" cy="50" :r="cacheRing.R" fill="none" stroke-width="12"
+                  stroke-linecap="square" transform="rotate(-90 50 50)"
+                  class="stroke-amber-500 transition-all duration-700"
+                  :stroke-dasharray="`${cacheRing.filled} ${cacheRing.CIRC - cacheRing.filled}`"
+                />
+                <text x="50" y="47" text-anchor="middle" class="font-mono font-black"
+                  :fill="isDark ? '#f5f5f4' : '#1c1917'" font-size="16">
+                  {{ cacheRing.pct.toFixed(0) }}%
+                </text>
+                <text x="50" y="61" text-anchor="middle" class="font-mono"
+                  :fill="isDark ? '#a8a29e' : '#78716c'" font-size="7">
+                  {{ labels.hitRate.toUpperCase() }}
+                </text>
+              </svg>
+              <div class="space-y-1 text-[11px] font-mono">
+                <div class="flex justify-between gap-4">
+                  <span class="text-stone-500">{{ labels.cacheHits }}:</span>
+                  <span class="font-black text-emerald-700 dark:text-emerald-400">{{ metrics.performance?.cache?.hits || 0 }}</span>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <span class="text-stone-500">{{ labels.cacheMisses }}:</span>
+                  <span class="font-black text-rose-700 dark:text-rose-400">{{ metrics.performance?.cache?.misses || 0 }}</span>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <span class="text-stone-500">{{ labels.savedTokens }}</span>
+                  <span class="font-black text-amber-700 dark:text-amber-400">{{ metrics.tokens?.tokens_saved_by_cache || 0 }}</span>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <span class="text-stone-500">{{ labels.savingsUsd }}:</span>
+                  <span class="font-black text-stone-950 dark:text-stone-100">${{ (metrics.costs?.savings_by_cache_usd || 0).toFixed(4) }}</span>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <span class="text-stone-500">{{ labels.savingsCop }}:</span>
+                  <span class="font-black text-stone-950 dark:text-stone-100">${{ (metrics.costs?.savings_by_cache_cop || 0).toFixed(0) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 3: Distribución de Intenciones -->
+          <div>
+            <div class="text-[10px] uppercase font-black tracking-wider text-stone-600 dark:text-stone-400 mb-2">
+              {{ labels.chartIntentsTitle }}
+            </div>
+            <div v-if="intentsList.list.length === 0" class="py-4 text-center text-[10px] font-mono text-stone-500">
+              {{ labels.intentsEmpty }}
+            </div>
+            <div v-else class="space-y-1.5">
+              <div v-for="item in intentsList.list" :key="item.key" class="flex items-center gap-2">
+                <span class="w-36 sm:w-44 shrink-0 truncate text-[10px] font-black text-stone-700 dark:text-stone-300">
+                  {{ item.label }}
+                </span>
+                <div class="flex-1 h-2.5 border border-stone-900 dark:border-stone-700 bg-white dark:bg-stone-950 overflow-hidden">
+                  <div
+                    class="h-full transition-all duration-700"
+                    :class="item.key === 'escalamiento' ? 'bg-rose-600' : 'bg-amber-600'"
+                    :style="{ width: (item.count / intentsList.max) * 100 + '%' }"
+                  ></div>
+                </div>
+                <span class="w-6 text-right font-mono text-[10px] font-black text-stone-950 dark:text-stone-100">
+                  {{ item.count }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -17,6 +17,7 @@ import Navbar from './components/Navbar.vue'
 import QuickPrompts from './components/QuickPrompts.vue'
 import ChatMessageItem from './components/ChatMessage.vue'
 import MetricsModal from './components/MetricsModal.vue'
+import HistoryModal from './components/HistoryModal.vue'
 import ExportPdfModal from './components/ExportPdfModal.vue'
 import EscalationToast from './components/EscalationToast.vue'
 import AuthModal from './components/AuthModal.vue'
@@ -27,6 +28,7 @@ const currentLang = ref<Language>('es')
 const isOnline = ref(true)
 const totalQueries = ref(0)
 const showMetrics = ref(false)
+const showHistory = ref(false)
 const showExportPdf = ref(false)
 const showAuthModal = ref(false)
 const currentUser = ref<any | null>(null)
@@ -324,6 +326,7 @@ onMounted(async () => {
         statusOnline: t.statusOnline,
         statusOffline: t.statusOffline,
         metricsBtn: t.metricsBtn,
+        historyBtn: t.historyBtn,
         exportPdfBtn: t.exportPdfBtn,
         themeLight: t.themeLight,
         themeDark: t.themeDark
@@ -331,6 +334,7 @@ onMounted(async () => {
       @toggle-theme="toggleTheme"
       @toggle-lang="toggleLanguage"
       @open-metrics="openMetricsProtected"
+      @open-history="showHistory = true"
       @open-export-pdf="showExportPdf = true"
     />
 
@@ -513,6 +517,14 @@ onMounted(async () => {
         resolvedByAI: t.resolvedByAI,
         humanEscalation: t.humanEscalation,
         cacheHits: t.cacheHits,
+        chartAIvsHuman: t.chartAIvsHuman,
+        chartCacheTitle: t.chartCacheTitle,
+        chartIntentsTitle: t.chartIntentsTitle,
+        hitRate: t.hitRate,
+        savingsUsd: t.savingsUsd,
+        savingsCop: t.savingsCop,
+        cacheMisses: t.cacheMisses,
+        intentsEmpty: t.intentsEmpty,
         tokenSectionTitle: t.tokenSectionTitle,
         totalTokens: t.totalTokens,
         savedTokens: t.savedTokens,
@@ -537,6 +549,36 @@ onMounted(async () => {
       @logout="handleLogout"
       @unauthorized="showMetrics = false; showAuthModal = true"
       @close="showMetrics = false"
+    />
+
+    <!-- History & Ticket Queue Modal -->
+    <HistoryModal
+      v-if="showHistory"
+      :is-dark="isDark"
+      :labels="{
+        title: t.historyTitle,
+        subtitle: t.historySubtitle,
+        tabHistory: t.tabHistory,
+        tabTickets: t.tabTickets,
+        noSessions: t.noSessions,
+        noTickets: t.noTickets,
+        sessionChannel: t.sessionChannel,
+        sessionMessages: t.sessionMessages,
+        sessionEscalations: t.sessionEscalations,
+        openTranscript: t.openTranscript,
+        backToSessions: t.backToSessions,
+        emptyTranscript: t.emptyTranscript,
+        ticketIntent: t.ticketIntent,
+        ticketReason: t.ticketReason,
+        ticketStatus: t.ticketStatus,
+        ticketCreated: t.ticketCreated,
+        statusOpen: t.statusOpen,
+        statusInProgress: t.statusInProgress,
+        statusClosed: t.statusClosed,
+        statusUpdated: t.statusUpdated,
+        closeBtn: t.closeBtn
+      }"
+      @close="showHistory = false"
     />
 
     <!-- Authentication Modal (Login & Register for Metrics) -->

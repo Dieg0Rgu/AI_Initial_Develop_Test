@@ -9,15 +9,17 @@ try:
     from app.config import settings
     from app.exceptions import GastroteacherException
     from app.utils.logger import logger
-    from app.api.routers import chat, documents, metrics, health, export, nonsense, auth
+    from app.api.routers import chat, documents, metrics, health, export, nonsense, auth, persistence
     from app.api.routers.documents import ingest_all_documents
+    from app.db import init_db
     from app.rag.vector_store import ChromaVectorStore
 except ImportError:
     from backend.app.config import settings
     from backend.app.exceptions import GastroteacherException
     from backend.app.utils.logger import logger
-    from backend.app.api.routers import chat, documents, metrics, health, export, nonsense, auth
+    from backend.app.api.routers import chat, documents, metrics, health, export, nonsense, auth, persistence
     from backend.app.api.routers.documents import ingest_all_documents
+    from backend.app.db import init_db
     from backend.app.rag.vector_store import ChromaVectorStore
 
 
@@ -25,6 +27,7 @@ except ImportError:
 async def lifespan(app: FastAPI):
     # Startup: Ensure vector store has documents indexed
     logger.info("Initializing Gastroteacher Assistant Backend...")
+    init_db()
     try:
         vs = ChromaVectorStore()
         if vs.count() == 0:
@@ -105,6 +108,7 @@ app.include_router(health.router)
 app.include_router(export.router)
 app.include_router(nonsense.router)
 app.include_router(auth.router)
+app.include_router(persistence.router)
 
 
 @app.get("/")

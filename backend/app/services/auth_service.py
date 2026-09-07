@@ -6,8 +6,9 @@ import hashlib
 import base64
 import json
 import time
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterator
 
 try:
     import bcrypt
@@ -32,10 +33,21 @@ class AuthService:
         self.db_path = str(db_path or DB_PATH)
         self._init_db()
 
-    def _get_conn(self) -> sqlite3.Connection:
+    @contextmanager
+    def _get_conn(self) -> Iterator[sqlite3.Connection]:
+        """Abre una conexión, hace commit/rollback al salir y SIEMPRE la cierra.
+
+        Nota: `with sqlite3.connect(...) as conn:` NO cierra la conexión; en
+        Windows el archivo queda bloqueado hasta el garbage collector, lo que
+        rompía las pruebas con TemporaryDirectory.
+        """
         conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+        try:
+            conn.row_factory = sqlite3.Row
+            with conn:  # transaccional: commit al salir, rollback ante excepción
+                yield conn
+        finally:
+            conn.close()
 
     def _init_db(self):
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
@@ -231,4 +243,3 @@ class AuthService:
 
 
 auth_service = AuthService()
-

@@ -315,8 +315,7 @@ function handleEmailClick() {
           @click="showSources = !showSources"
           class="font-mono text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer flex items-center gap-1"
         >
-          <span>{{ showSources ? labels.hideSources : labels.viewSources }}</span>
-          <span>({{ message.sources.length }})</span>
+          <span>{{ (showSources ? labels.hideSources : labels.viewSources).replace('{count}', String(message.sources.length)) }}</span>
           <span>{{ showSources ? '▲' : '▼' }}</span>
         </button>
       </div>
