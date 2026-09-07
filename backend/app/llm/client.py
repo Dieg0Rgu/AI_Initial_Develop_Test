@@ -949,6 +949,8 @@ class LLMClient:
                 "Authorization": f"Bearer {key}",
                 "Content-Type": "application/json"
             }
+            if provider == "gemini":
+                headers["x-goog-api-key"] = key
             payload = {
                 "model": model,
                 "messages": messages,
